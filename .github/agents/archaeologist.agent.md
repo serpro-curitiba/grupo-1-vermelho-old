@@ -3,11 +3,7 @@ name: archaeologist
 description: "Agente do Estágio 1 — lê código legado Natural/Adabas, extrai regras de negócio, mapeia dependências, cataloga mistérios"
 model: claude-opus-4-7
 tools:
-  - codebase
-  - search
-  - usages
-  - findFiles
-  - fetch
+[vscode, execute, read, agent, edit, search, web/fetch, browser]
 ---
 
 # @archaeologist-agent

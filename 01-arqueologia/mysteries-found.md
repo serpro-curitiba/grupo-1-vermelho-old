@@ -42,6 +42,20 @@
 
 ## Mistérios Catalogados
 
+<<<<<<< HEAD
+| ID      | Descrição | Onde Encontrado | Impacto Potencial | Confiança |
+| ------- | --------- | --------------- | ----------------- | --------- |
+| MYS-001 | Status = 'S' atribuído para beneficiários > 75 anos, mas significado nunca é documentado | CADBENEF.NSN#L160-L162 | Risco: status 'S' pode significar aposentado, inválido ou elegibilidade especial sem clareza | aberto |
+| MYS-002 | Campo RENDA-FAMILIAR coletado e armazenado, mas NUNCA é validado ou usado em comparações | CADBENEF.NSN#L52,171,223 | Risco: dados fantasma; possível bug silencioso se elegibilidade depende de renda | aberto |
+| MYS-003 | Constante mágica 0.347215 hardcoded em fórmula de cálculo, sem comentário explicativo | CADPROG.NSN#L88 | Risco: cálculos financeiros; constante pode ser inflação, índice perdido em 23 anos | aberto |
+| MYS-004 | DT-FIM do programa pode ser 0 (indeterminado), mas sistema não trata em comparações de validade | CADPROG.NSN#L70 | Risco: queries futuras compareando datas podem falhar silenciosamente | aberto |
+| MYS-005 | Limite máximo 5 dependentes por beneficiário sem explicação da origem ou justificativa | CADDEPEND.NSN#L35 | Risco: por quê 5? Limite legal, técnico ou histórico? Afeta elegibilidade | aberto |
+| MYS-006 | Campos CPF, DT-NASCIMENTO, SEXO, COD-PROGRAMA imutáveis em atualização; regra nunca documentada | CADBENEF.NSN#L187-L230 | Risco: migrations viram armadilhas; imutabilidade deve ser tratada em modernização | aberto |
+| MYS-007 | DEPENDENTES podem ter parentesco 'OU' (outro), sem validação contra tabela de valores válido | CADDEPEND.NSN#L58-L59 | Risco: 'OU' é indefinido; quem são? Tutores? Regras de elegibilidade viram ambíguas | aberto |
+| MYS-008 |                  |                 |                   |           |
+| MYS-009 |                  |                 |                   |           |
+| MYS-010 |                  |                 |                   |           |
+=======
 > Mistérios consolidados das três frentes de arqueologia: cálculo (CALCBENF / CALCCORR / CALCDSCT), batch/conciliação (BATCHCON / BATCHPGT) e validação + DDMs (VALBENEF / VALDOCS / VALELEG / DDMs).
 
 | ID      | Descrição                                                                                                                                                                                                  | Onde Encontrado                                                                                              | Impacto Potencial                                                                                                                      | Confiança |
@@ -67,6 +81,7 @@
 | MYS-019 | **Easter Egg 3:** Região `99` bypassa todas as regras de elegibilidade (status, idade, renda, docs, tipo)                                                                                                  | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L90-L96`                                           | Pagamentos podem fluir sem nenhum gate quando `COD-REGIAO=99`                                                                          | ALTA      |
 | MYS-020 | Fevereiro aceita até dia 29 em qualquer ano (`#DIAS-MES(2)=29` fixo, sem cálculo de bissexto)                                                                                                              | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L88-L102`                                         | Datas inválidas (ex: 29/02/2023) passam pelo legado e serão rejeitadas no destino → divergência                                        | MÉDIA     |
 | MYS-021 | Valor mágico `600.00` separa elegibilidade tipo A sem constante nomeada nem ADR                                                                                                                            | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L152-L160`                                         | Limite financeiro escondido — não rastreável a política externa                                                                        | MÉDIA     |
+>>>>>>> develop
 
 ## Detalhamento dos Mistérios
 

@@ -1,0 +1,898 @@
+################################################################################
+# ANÁLISE ARQUEOLÓGICA: PROGRAMA CADBENEF
+# Data da Análise: 2026-05-27
+# Arqueólogo: Agente Archaeologist
+################################################################################
+
+metadata:
+  programa: CADBENEF
+  sistema: SIFAP - SISTEMA DE FISCALIZAÇÃO E ADMINISTRAÇÃO DE PAGAMENTOS
+  autor: CARLOS ROBERTO DA SILVA
+  data_criacao: 15/03/1997
+  alteracoes:
+    - data: 22/08/2005
+      responsavel: MARCIA HELENA
+      motivo: INCLUSÃO VALIDAÇÃO CPF
+    - data: 10/01/2011
+      responsavel: JOSE FERREIRA
+      motivo: AJUSTE STATUS IDOSO
+  objetivo: |
+    CADASTRO DE BENEFICIÁRIO - INCLUSÃO/ALTERAÇÃO
+    MANUTENÇÃO DADOS CADASTRAIS ARQ 150
+  arquivo_ddm_relacionado: BENEFICIARIO (ARQ 150)
+
+################################################################################
+# ESTRUTURA DE DADOS
+################################################################################
+
+data_structure:
+  view_beneficiario:
+    descricao: "VIEW sobre a tabela BENEFICIARIO (arquivo físico 150)"
+    campos:
+      - nome: CPF
+        tipo: N11
+        descricao: "CPF do beneficiário (11 dígitos)"
+        chave_primaria: true
+        nullable: false
+      - nome: NOME
+        tipo: A60
+        descricao: "Nome completo do beneficiário"
+        nullable: false
+      - nome: DT-NASCIMENTO
+        tipo: N8
+        descricao: "Data de nascimento (AAAAMMDD)"
+        nullable: false
+      - nome: SEXO
+        tipo: A1
+        descricao: "Sexo (M/F)"
+        nullable: false
+      - nome: ENDERECO
+        tipo: A80
+        descricao: "Endereço residencial"
+        nullable: true
+      - nome: MUNICIPIO
+        tipo: A40
+        descricao: "Município"
+        nullable: true
+      - nome: UF
+        tipo: A2
+        descricao: "Unidade Federativa (sigla)"
+        nullable: true
+      - nome: CEP
+        tipo: N8
+        descricao: "Código de Endereçamento Postal"
+        nullable: true
+      - nome: TELEFONE
+        tipo: A15
+        descricao: "Telefone de contato"
+        nullable: true
+      - nome: RG
+        tipo: A15
+        descricao: "Número do RG"
+        nullable: true
+      - nome: STATUS
+        tipo: A1
+        descricao: "Status do beneficiário (A=Ativo, S=Suspenso)"
+        nullable: true
+      - nome: COD-PROGRAMA
+        tipo: N4
+        descricao: "Código do programa social"
+        nullable: true
+      - nome: RENDA-FAMILIAR
+        tipo: N9.2
+        descricao: "Renda familiar (até 999.999.99)"
+        nullable: true
+      - nome: NUM-DEPENDENTES
+        tipo: N2
+        descricao: "Número de dependentes (0-99)"
+        nullable: true
+      - nome: DT-CADASTRO
+        tipo: N8
+        descricao: "Data de cadastro (AAAAMMDD)"
+        nullable: true
+      - nome: DT-ATUALIZACAO
+        tipo: N8
+        descricao: "Data da última atualização (AAAAMMDD)"
+        nullable: true
+      - nome: COD-REGIAO
+        tipo: N2
+        descricao: "Código da região administrativa (01-99)"
+        nullable: true
+      - nome: NIS
+        tipo: N11
+        descricao: "Número de Identificação Social (11 dígitos)"
+        nullable: true
+
+  variaveis_entrada_saida:
+    descricao: "Variáveis de entrada (prefixo #) e seus mapeamentos para VIEW"
+    entrada:
+      - nome: "#OPER"
+        tipo: A1
+        descricao: "Operação I=INCLUSÃO ou A=ALTERAÇÃO"
+      - nome: "#CPF"
+        tipo: N11
+        mapeado_para: "BENEFICIARIO-V.CPF"
+      - nome: "#NOME"
+        tipo: A60
+        mapeado_para: "BENEFICIARIO-V.NOME"
+      - nome: "#DT-NASC"
+        tipo: N8
+        mapeado_para: "BENEFICIARIO-V.DT-NASCIMENTO"
+      - nome: "#SEXO"
+        tipo: A1
+        mapeado_para: "BENEFICIARIO-V.SEXO"
+      - nome: "#ENDERECO"
+        tipo: A80
+        mapeado_para: "BENEFICIARIO-V.ENDERECO"
+      - nome: "#MUNICIPIO"
+        tipo: A40
+        mapeado_para: "BENEFICIARIO-V.MUNICIPIO"
+      - nome: "#UF"
+        tipo: A2
+        mapeado_para: "BENEFICIARIO-V.UF"
+      - nome: "#CEP"
+        tipo: N8
+        mapeado_para: "BENEFICIARIO-V.CEP"
+      - nome: "#TELEFONE"
+        tipo: A15
+        mapeado_para: "BENEFICIARIO-V.TELEFONE"
+      - nome: "#RG"
+        tipo: A15
+        mapeado_para: "BENEFICIARIO-V.RG"
+      - nome: "#COD-PROG"
+        tipo: N4
+        mapeado_para: "BENEFICIARIO-V.COD-PROGRAMA"
+      - nome: "#RENDA-FAM"
+        tipo: N9.2
+        mapeado_para: "BENEFICIARIO-V.RENDA-FAMILIAR"
+      - nome: "#NUM-DEP"
+        tipo: N2
+        mapeado_para: "BENEFICIARIO-V.NUM-DEPENDENTES"
+      - nome: "#COD-REG"
+        tipo: N2
+        mapeado_para: "BENEFICIARIO-V.COD-REGIAO"
+      - nome: "#NIS"
+        tipo: N11
+        mapeado_para: "BENEFICIARIO-V.NIS"
+
+  variaveis_auxiliares:
+    descricao: "Variáveis de trabalho e controle de fluxo"
+    variaveis:
+      - nome: "#DT-HOJE"
+        tipo: N8
+        descricao: "Data atual (obtida via *DATN)"
+      - nome: "#ANO-ATUAL"
+        tipo: N4
+        descricao: "Ano atual (extraído de #DT-HOJE)"
+      - nome: "#ANO-NASC"
+        tipo: N4
+        descricao: "Ano de nascimento (extraído de #DT-NASC)"
+      - nome: "#IDADE"
+        tipo: N3
+        descricao: "Idade calculada do beneficiário"
+      - nome: "#MSG"
+        tipo: A60
+        descricao: "Mensagem de erro ou sucesso"
+      - nome: "#ERRO"
+        tipo: L
+        descricao: "Flag de erro (TRUE/FALSE)"
+      - nome: "#CPF-VALIDO"
+        tipo: L
+        descricao: "Flag de validação de CPF (resultado de VALIDA-CPF)"
+      - nome: "#FOUND"
+        tipo: L
+        descricao: "Flag indicando se beneficiário foi encontrado"
+      - nome: "#CPF-STR"
+        tipo: A11
+        descricao: "String do CPF para parsing dígito-a-dígito"
+      - nome: "#DIG"
+        tipo: "N1/11"
+        descricao: "Array com 11 dígitos do CPF (índices 1-11)"
+      - nome: "#SOMA"
+        tipo: N5
+        descricao: "Acumulador para cálculo de dígito verificador"
+      - nome: "#RESTO"
+        tipo: N3
+        descricao: "Resto da divisão (módulo 11)"
+      - nome: "#DV1"
+        tipo: N1
+        descricao: "Primeiro dígito verificador calculado"
+      - nome: "#DV2"
+        tipo: N1
+        descricao: "Segundo dígito verificador calculado"
+      - nome: "#PESO"
+        tipo: N2
+        descricao: "Peso multiplicativo na validação CPF"
+      - nome: "#I"
+        tipo: N2
+        descricao: "Índice de loop (1-11)"
+
+################################################################################
+# INPUTS/OUTPUTS - ACESSO A ARQUIVOS/DDMs
+################################################################################
+
+io_operations:
+  inputs:
+    - tipo: "FIND (READ)"
+      arquivo: "BENEFICIARIO (ARQ 150)"
+      operacao: "SELECT com chave CPF"
+      linhas: "L148-L154 (verificação de existência)"
+      proposito: "Buscar beneficiário antes de operação"
+      condicoes:
+        - "FIND BENEFICIARIO-V WITH CPF = #CPF"
+        - "Resultado armazenado em #FOUND"
+
+  outputs:
+    - tipo: "STORE (INSERT)"
+      arquivo: "BENEFICIARIO (ARQ 150)"
+      operacao: "Inserção de novo registro"
+      linhas: "L194-L208 (VALUE 'I')"
+      proposito: "Incluir novo beneficiário"
+      campos_preenchidos:
+        - CPF, NOME, DT-NASCIMENTO, SEXO, ENDERECO
+        - MUNICIPIO, UF, CEP, TELEFONE, RG, STATUS
+        - COD-PROGRAMA, RENDA-FAMILIAR, NUM-DEPENDENTES
+        - DT-CADASTRO, DT-ATUALIZACAO, COD-REGIAO, NIS
+      transacao: "END TRANSACTION"
+
+    - tipo: "UPDATE (MODIFY)"
+      arquivo: "BENEFICIARIO (ARQ 150)"
+      operacao: "Atualização de registro existente"
+      linhas: "L210-L228 (VALUE 'A')"
+      proposito: "Alterar dados de beneficiário existente"
+      campos_atualizaveis:
+        - NOME, ENDERECO, MUNICIPIO, UF, CEP
+        - TELEFONE, RG, STATUS, RENDA-FAMILIAR
+        - NUM-DEPENDENTES, DT-ATUALIZACAO
+      campos_nao_atualizaveis:
+        - CPF (chave primária)
+        - DT-NASCIMENTO (imutável)
+        - SEXO (imutável)
+        - DT-CADASTRO (data de origem)
+      transacao: "END TRANSACTION"
+
+  interface_usuario:
+    - tipo: "INPUT"
+      linhas: "L87-L105"
+      tela: "SIFAP - CADASTRO DE BENEFICIARIO"
+      campos: "14 campos lidos interativamente"
+
+    - tipo: "WRITE (OUTPUT)"
+      mensagens:
+        - "BENEFICIARIO INCLUIDO COM SUCESSO"
+        - "BENEFICIARIO ALTERADO COM SUCESSO"
+        - "OPERACAO INVALIDA"
+      mensagens_erro: "Variável #MSG"
+
+################################################################################
+# DEPENDÊNCIAS - CHAMADAS A OUTROS PROGRAMAS
+################################################################################
+
+dependencies:
+  callnat_subroutines: []
+  external_programs: []
+  internal_subroutines:
+    - nome: "VALIDA-CPF"
+      linhas: "L267-L318"
+      tipo: "DEFINE SUBROUTINE"
+      proposito: "Validar CPF usando algoritmo módulo 11"
+      parametros_entrada: "#CPF"
+      parametros_saida: "#CPF-VALIDO"
+      sistema_funcoes:
+        - "*DATN": "Data/Hora do sistema"
+        - "SUBSTR": "Função de substring"
+
+  arquivos_acessados:
+    - nome: "BENEFICIARIO (ARQ 150)"
+      tipo: "DDM"
+      operacoes: ["READ via FIND", "STORE (INSERT)", "UPDATE"]
+      linha_view: "L12-L30"
+
+################################################################################
+# REGRAS DE NEGÓCIO - EXTRAÍDAS
+################################################################################
+
+business_rules:
+  - id: BR-001
+    rule: "Operação de beneficiário deve ser I (Inclusão) ou A (Alteração)"
+    line_range: "L119-L124"
+    fields: ["#OPER"]
+    validacao_type: "VALIDAÇÃO_OPERAÇÃO"
+    risk_level: CRÍTICO
+    impacto: "Rejeita operação inválida imediatamente"
+    mensagem_erro: "OPERACAO INVALIDA - INFORME I OU A"
+
+  - id: BR-002
+    rule: "CPF é obrigatório para qualquer operação"
+    line_range: "L126-L131"
+    fields: ["CPF"]
+    validacao_type: "VALIDAÇÃO_CAMPO_OBRIGATORIO"
+    risk_level: CRÍTICO
+    impacto: "Registros sem CPF são rejeitados"
+    mensagem_erro: "CPF OBRIGATORIO"
+    observacao: "CPF é chave primária de BENEFICIARIO"
+
+  - id: BR-003
+    rule: |
+      Validação de CPF usando algoritmo Módulo 11
+      - Primeiro dígito: soma ponderada (P=10 a 2) dos primeiros 9 dígitos
+      - Se resto < 2, DV1 = 0; senão DV1 = 11 - resto
+      - Segundo dígito: soma ponderada (P=11 a 2) dos primeiros 10 dígitos
+      - Se resto < 2, DV2 = 0; senão DV2 = 11 - resto
+      - Ambos DV1 e DV2 devem bater com dígitos 10 e 11 do CPF
+    line_range: "L267-L318"
+    fields: ["CPF"]
+    validacao_type: "VALIDAÇÃO_CHECKSUM"
+    risk_level: CRÍTICO
+    impacto: "Rejeita CPFs com dígitos verificadores incorretos"
+    mensagem_erro: "CPF INVALIDO - DIGITO VERIFICADOR INCORRETO"
+    chamada: "PERFORM VALIDA-CPF"
+    algoritmo_detalhe: |
+      Função interna VALIDA-CPF (linhas 267-318):
+      1. Extrai 11 dígitos de #CPF via SUBSTR (L272-L275)
+      2. Calcula DV1: SOMA = DIG(1)*10 + DIG(2)*9 + ... + DIG(9)*2
+      3. RESTO = SOMA MOD 11
+      4. Se RESTO < 2: DV1 = 0, senão DV1 = 11 - RESTO
+      5. Valida DV1 contra DIG(10) (L289-L291)
+      6. Calcula DV2: SOMA = DIG(1)*11 + DIG(2)*10 + ... + DIG(10)*2
+      7. RESTO = SOMA MOD 11
+      8. Se RESTO < 2: DV2 = 0, senão DV2 = 11 - RESTO
+      9. Valida DV2 contra DIG(11) (L305-L307)
+
+  - id: BR-004
+    rule: "Nome é obrigatório"
+    line_range: "L133-L138"
+    fields: ["NOME"]
+    validacao_type: "VALIDAÇÃO_CAMPO_OBRIGATORIO"
+    risk_level: CRÍTICO
+    impacto: "Registros sem nome são rejeitados"
+    mensagem_erro: "NOME OBRIGATORIO"
+
+  - id: BR-005
+    rule: "Data de nascimento é obrigatória (formato AAAAMMDD)"
+    line_range: "L140-L145"
+    fields: ["DT-NASCIMENTO"]
+    validacao_type: "VALIDAÇÃO_CAMPO_OBRIGATORIO"
+    risk_level: CRÍTICO
+    impacto: "Registros sem DT-NASCIMENTO são rejeitados"
+    mensagem_erro: "DATA NASCIMENTO OBRIGATORIA"
+    observacao: "Não há validação de data válida (ex: 32/13)"
+
+  - id: BR-006
+    rule: "Sexo deve ser M (Masculino) ou F (Feminino)"
+    line_range: "L147-L152"
+    fields: ["SEXO"]
+    validacao_type: "VALIDAÇÃO_ENUM"
+    risk_level: CRÍTICO
+    impacto: "Valores de sexo inválidos (ex: 'X') são rejeitados"
+    mensagem_erro: "SEXO INVALIDO"
+
+  - id: BR-007
+    rule: "Em operação de INCLUSÃO (I), beneficiário não deve existir préviamente"
+    line_range: "L154-L164"
+    fields: ["#OPER", "CPF"]
+    validacao_type: "VALIDAÇÃO_UNICIDADE"
+    risk_level: CRÍTICO
+    impacto: "Impede duplicação de beneficiários com mesmo CPF"
+    mensagem_erro: "BENEFICIARIO JA CADASTRADO"
+    sql_equivalente: "UNIQUE constraint em CPF"
+
+  - id: BR-008
+    rule: "Em operação de ALTERAÇÃO (A), beneficiário deve existir"
+    line_range: "L166-L171"
+    fields: ["#OPER", "CPF"]
+    validacao_type: "VALIDAÇÃO_EXISTENCIA"
+    risk_level: CRÍTICO
+    impacto: "Não permite alterar CPF inexistente"
+    mensagem_erro: "BENEFICIARIO NAO ENCONTRADO PARA ALTERACAO"
+
+  - id: BR-009
+    rule: "Cálculo da idade a partir de data de nascimento"
+    line_range: "L173-L177"
+    fields: ["DT-NASCIMENTO", "#IDADE"]
+    validacao_type: "CÁLCULO"
+    risk_level: MÉDIO
+    formula: "#IDADE = ANO_ATUAL - ANO_NASCIMENTO"
+    impacto: |
+      Idade é calculada apenas por ano (sem considerar mês/dia).
+      Exemplo: nascido em 2000-12-31, em 2026-01-01 terá idade 25
+      (embora tenha apenas 1 dia de 25 anos).
+    observacao: "Aproximação grosseira, não segue normas civis"
+
+  - id: BR-010
+    rule: "Status inicial padrão para novo beneficiário é 'A' (Ativo)"
+    line_range: "L179-L182"
+    fields: ["STATUS"]
+    validacao_type: "REGRA_NEGOCIO"
+    risk_level: MÉDIO
+    impacto: "Todo beneficiário novo inicia como ATIVO"
+    condicao: "Apenas em operação I (INCLUSÃO)"
+    observacao: "Pode ser sobrescrito por regra de idade (BR-011)"
+
+  - id: BR-011
+    rule: "Beneficiários com idade > 75 anos recebem status 'S' (Suspenso)"
+    line_range: "L184-L187"
+    fields: ["#IDADE", "STATUS"]
+    validacao_type: "REGRA_NEGOCIO"
+    risk_level: ALTO
+    impacto: "Beneficiários acima de 75 anos são automaticamente suspensos"
+    condicao: "#IDADE > 75"
+    status_atribuido: "S (Suspenso)"
+    observacao: |
+      Esta regra foi adicionada em 10/01/2011 (ajuste status idoso).
+      Pode sobrescrever o status 'A' padrão da BR-010.
+      Impacto: pode estar relacionado a benefícios para idosos.
+
+  - id: BR-012
+    rule: "Em INCLUSÃO: todos os campos de entrada são gravados; DT-CADASTRO e DT-ATUALIZACAO recebem data de hoje"
+    line_range: "L194-L208"
+    fields: ["DT-CADASTRO", "DT-ATUALIZACAO"]
+    validacao_type: "REGRA_NEGOCIO"
+    risk_level: MÉDIO
+    impacto: "Beneficiário novo tem data de cadastro = hoje"
+    observacao: "Permite rastreamento de quando o beneficiário foi criado"
+
+  - id: BR-013
+    rule: "Em ALTERAÇÃO: CPF, DT-NASCIMENTO, SEXO, DT-CADASTRO NÃO são atualizáveis"
+    line_range: "L210-L228"
+    fields: ["CPF", "DT-NASCIMENTO", "SEXO"]
+    validacao_type: "REGRA_NEGOCIO"
+    risk_level: ALTO
+    impacto: "Campos sensíveis são imutáveis após criação"
+    campos_nao_atualizaveis: ["CPF", "DT-NASCIMENTO", "SEXO", "DT-CADASTRO"]
+    campos_atualizaveis: ["NOME", "ENDERECO", "MUNICIPIO", "UF", "CEP", "TELEFONE", "RG", "STATUS", "RENDA-FAMILIAR", "NUM-DEPENDENTES"]
+    observacao: "Após alteração, DT-ATUALIZACAO é atualizada"
+
+################################################################################
+# MISTÉRIOS DESCOBERTOS - ANOMALIAS E LACUNAS
+################################################################################
+
+mysteries:
+  - id: M-001
+    titulo: "Validação incompleta de data de nascimento"
+    descricao: |
+      O programa obtém a data de nascimento (DT-NASC) mas:
+      1. Não valida se é uma data real (ex: 32/13/2000 seria aceito)
+      2. Não valida se está no futuro
+      3. Não valida limites de idade mínima
+      Risco: Dados corrompidos no arquivo 150
+    linha: "L140-L145"
+    severidade: MÉDIO
+    sugestao: |
+      Deveria verificar:
+      - MÊS entre 01-12
+      - DIA válido para o mês (com cálculo de bissexto)
+      - DT-NASC <= DT-HOJE
+      - IDADE >= 18 (presumido para beneficiários)
+
+  - id: M-002
+    titulo: "Arredondamento de idade por truncamento"
+    descricao: |
+      Idade é calculada como (ANO_ATUAL - ANO_NASCIMENTO),
+      ignorando mês e dia. Isso cria anomalia:
+      - Alguém nascido em 31/12/1950
+      - Em 01/01/2026, teria 76 anos (correto)
+      - Em 31/12/1950 + 1 dia = 01/01/1951, teria 75 anos (ERRADO)
+      Impacto: Beneficiários podem ser suspensos (BR-011) no dia errado
+    linha: "L173-L177"
+    severidade: ALTO
+    sugestao: |
+      Deveria calcular idade como:
+      IDADE = ANO_ATUAL - ANO_NASCIMENTO - 1, se (MÊS_ATUAL < MÊS_NASC OR (MÊS_ATUAL = MÊS_NASC AND DIA_ATUAL < DIA_NASC))
+
+  - id: M-003
+    titulo: "Limite de 75 anos para suspensão: justificativa?"
+    descricao: |
+      A regra BR-011 define limite rígido em 75 anos.
+      Questões:
+      - Por que 75 e não 70, 65 ou 80?
+      - É uma regra de programa social específico?
+      - Há política governamental associada?
+      - Data de origem: 10/01/2011 (ajuste JOSE FERREIRA)
+      Risco: Regra pode estar desatualizada ou ser erro de transcription
+    linha: "L184-L187"
+    severidade: ALTO
+    sugestao: "Consultar com negócio origem desta regra (JOSE FERREIRA)"
+
+  - id: M-004
+    titulo: "CPF de 0 é rejeitado, mas a query da VIEW permanece"
+    descricao: |
+      Linha 156 valida: IF #CPF = 0, erro
+      Mas isto é redundante: em INCLUSÃO, há IF #OPER = 'I' AND #FOUND,
+      e #FOUND vem de FIND BENEFICIARIO-V WITH CPF = #CPF.
+      Se #CPF = 0, é improvável que haja um registro com CPF=0.
+      Questão: Há beneficiários com CPF=0 no banco? Isso é um bug de dados.
+    linha: "L126-L131 (validação), L148-L154 (query)"
+    severidade: MÉDIO
+    sugestao: |
+      1. Verificar se BENEFICIARIO tem CPF=0 no banco
+      2. Se sim: migração de dados para corrigir
+      3. Se não: validação é desnecessária
+
+  - id: M-005
+    titulo: "Campos de endereço e contato podem ser nulos na VIEW"
+    descricao: |
+      A estrutura VIEW não marca ENDERECO, MUNICIPIO, UF, CEP, TELEFONE, RG como NOT NULL.
+      Mas o programa permite inserir beneficiário SEM preencher endereço completo.
+      Questão: É intencional ou oversight?
+      Impacto: Endereços incompletos dificultam correspondência física
+    linha: "L12-L30 (VIEW)", "L194-L208 (STORE)"
+    severidade: MÉDIO
+    sugestao: |
+      Definir política: 
+      - Todos os endereços devem ser completos?
+      - Ou endereço é "opcional" para beneficiários em abrigos?
+
+  - id: M-006
+    titulo: "COD-PROGRAMA e COD-REGIAO não são validados contra tabelas"
+    descricao: |
+      O programa aceita qualquer N4 para COD-PROGRAMA e N2 para COD-REGIAO.
+      Não há validação se código existe em tabelas de programa ou região.
+      Risco: Dados órfãos (referências para programas/regiões inexistentes)
+    linha: "L95-L96, L104"
+    severidade: ALTO
+    sugestao: |
+      Implementar:
+      - FIND PROGRAMA WITH COD-PROGRAMA = #COD-PROG
+      - FIND REGIAO WITH COD-REGIAO = #COD-REG
+      - Rejeitar se não encontrar
+
+  - id: M-007
+    titulo: "NIS (Número Identificação Social) é aceito sem validação"
+    descricao: |
+      NIS é campo de 11 dígitos mas:
+      1. Não há validação de checksum (como em CPF)
+      2. Não há validação se NIS é único (pode haver duplicatas)
+      3. Não há validação se NIS existe em cadastro nacional
+      Risco: Dados duplicados, inconsistência com INSS
+    linha: "L101"
+    severidade: ALTO
+    sugestao: |
+      Consultar com:
+      - Responsável de integração INSS
+      - Se há algoritmo de validação NIS
+      - Se NIS deve ser único por beneficiário
+
+  - id: M-008
+    titulo: "Renda familiar e número de dependentes não são validados"
+    descricao: |
+      #RENDA-FAM pode ser 0 ou negativa (campo N9.2)
+      #NUM-DEP pode ser 0 ou > 99 (campo N2)
+      Não há validação lógica:
+      - Renda negativa é inválida?
+      - Se há dependentes, renda deve ser > limite?
+      - Há inconsistência if RENDA-FAM = 0 e NUM-DEP > 0?
+    linha: "L97-L98"
+    severidade: MÉDIO
+    sugestao: |
+      Adicionar:
+      - RENDA-FAM >= 0
+      - NUM-DEP >= 0 AND NUM-DEP <= 99
+      - Se NUM-DEP > 0, talvez RENDA-FAM > 0?
+
+  - id: M-009
+    titulo: "Não há validação cruzada de SEXO vs. regras de benefício"
+    descricao: |
+      O programa não menciona diferenças entre benefícios M/F.
+      Questão: Há programas específicos por sexo?
+      Exemplo: Licença maternidade (apenas F) vs. paternidade (apenas M)?
+    linha: "L147-L152"
+    severidade: BAIXO
+    sugestao: |
+      Verificar com negócio se há validações sexo-específicas.
+      Pode estar em programa chamado por CADBENEF ou no módulo de benefícios.
+
+  - id: M-010
+    titulo: "Lógica de transação pode deixar dados inconsistentes"
+    descricao: |
+      Linha 209: "END TRANSACTION" e Linha 222: "END TRANSACTION"
+      Questão: Se falha de I/O acontece depois de UPDATE mas antes de END TRANSACTION?
+      O banco de dados está protegido por transação ACID?
+      Adabas oferece garantias transacionais equivalentes a SQL?
+    linha: "L209, L222"
+    severidade: ALTO
+    sugestao: |
+      Verificar documentação Adabas:
+      - Nível de isolamento de transações
+      - Comportamento em rollback
+      - Possibilidade de deadlock
+
+  - id: M-011
+    titulo: "Campos DT-CADASTRO e DT-ATUALIZACAO gravados sem timestamp"
+    descricao: |
+      Usa *DATN que retorna apenas data (AAAAMMDD), sem hora (HHMMSS).
+      Questão: Se múltiplas operações no mesmo dia, como rastrear sequência?
+      Potencial perda de auditoria de tempo preciso.
+    linha: "L109-L112"
+    severidade: MÉDIO
+    sugestao: "Considerar adicionar timestamp completo (com hora)"
+
+  - id: M-012
+    titulo: "Mensagens de erro em português podem quebrar em sistemas multilíngues"
+    descricao: |
+      Todas as mensagens hardcoded em português.
+      Se sistema migrar para cloud com suporte multilíngue, será necessário refatoring.
+    linha: "L119-L187, L209-L228"
+    severidade: BAIXO
+    sugestao: "Considerar externalizar mensagens em arquivo de i18n"
+
+################################################################################
+# CHAMADAS DE OPERAÇÃO (FLUXO)
+################################################################################
+
+operational_flow:
+  entrada:
+    - ordem: 1
+      acao: "Obter data/hora do sistema"
+      codigo: "MOVE *DATN TO #DT-HOJE"
+      linha: 109
+    - ordem: 2
+      acao: "Extrair ano atual"
+      codigo: "DIVIDE 10000 INTO #ANO-ATUAL"
+      linha: 110-111
+    - ordem: 3
+      acao: "Ler formulário interativo"
+      codigo: "INPUT ... 14 campos"
+      linha: 87-105
+    - ordem: 4
+      acao: "Validações básicas (6 campos)"
+      descricao: "OPER, CPF, CPF válido, NOME, DT-NASC, SEXO"
+      linha: 119-152
+
+  processamento:
+    - ordem: 5
+      acao: "Buscar beneficiário existente"
+      codigo: "FIND BENEFICIARIO-V WITH CPF = #CPF"
+      linha: 148-154
+    - ordem: 6
+      acao: "Validar dupla (I) vs. não-existe (A)"
+      codigo: "IF #OPER = 'I' AND #FOUND / IF #OPER = 'A' AND NOT #FOUND"
+      linha: 156-171
+    - ordem: 7
+      acao: "Calcular idade"
+      codigo: "COMPUTE #IDADE = #ANO-ATUAL - #ANO-NASC"
+      linha: 173-177
+    - ordem: 8
+      acao: "Definir status padrão"
+      codigo: "IF #OPER = 'I' MOVE 'A' TO #STATUS"
+      linha: 179-182
+    - ordem: 9
+      acao: "Aplicar regra de suspensão por idade"
+      codigo: "IF #IDADE > 75 MOVE 'S' TO #STATUS"
+      linha: 184-187
+
+  saida_inclusao:
+    - ordem: 10
+      acao: "Mapear variáveis para VIEW"
+      codigo: "MOVE #CPF TO BENEFICIARIO-V.CPF ... MOVE #NIS TO BENEFICIARIO-V.NIS"
+      linha: 195-205
+    - ordem: 11
+      acao: "Gravar novo registro"
+      codigo: "STORE BENEFICIARIO-V / END TRANSACTION"
+      linha: 206-209
+    - ordem: 12
+      acao: "Mensagem de sucesso"
+      codigo: "WRITE 'BENEFICIARIO INCLUIDO COM SUCESSO'"
+      linha: 210
+
+  saida_alteracao:
+    - ordem: 10
+      acao: "Refazer busca"
+      codigo: "FIND BENEFICIARIO-V WITH CPF = #CPF"
+      linha: 212
+    - ordem: 11
+      acao: "Atualizar campos permitidos"
+      codigo: "MOVE #NOME TO BENEFICIARIO-V.NOME ... MOVE #NUM-DEP TO BENEFICIARIO-V.NUM-DEPENDENTES"
+      linha: 213-221
+    - ordem: 12
+      acao: "Gravar alteração"
+      codigo: "UPDATE BENEFICIARIO-V / END TRANSACTION"
+      linha: 222-224
+    - ordem: 13
+      acao: "Mensagem de sucesso"
+      codigo: "WRITE 'BENEFICIARIO ALTERADO COM SUCESSO'"
+      linha: 225
+
+  tratamento_erro:
+    - ordem: final
+      acao: "Se #ERRO = TRUE, escrever mensagem e sair"
+      codigo: "IF #ERRO / WRITE #MSG / ESCAPE ROUTINE"
+      linha: 189-191
+
+################################################################################
+# SUBROUTINA INTERNA: VALIDA-CPF
+################################################################################
+
+subroutine_valida_cpf:
+  linhas: "L267-L318"
+  tipo: "DEFINE SUBROUTINE ... END-SUBROUTINE"
+  proposito: "Validar CPF usando algoritmo módulo 11 (Receita Federal Brasil)"
+  algoritmo: |
+    CPF possui 11 dígitos: D1 D2 D3 D4 D5 D6 D7 D8 D9 DV1 DV2
+    
+    DV1 (1º dígito verificador):
+      SOMA = D1×10 + D2×9 + D3×8 + D4×7 + D5×6 + D6×5 + D7×4 + D8×3 + D9×2
+      RESTO = SOMA MOD 11
+      Se RESTO < 2: DV1 = 0
+      Senão: DV1 = 11 - RESTO
+      
+    DV2 (2º dígito verificador):
+      SOMA = D1×11 + D2×10 + D3×9 + D4×8 + D5×7 + D6×6 + D7×5 + D8×4 + D9×3 + DV1×2
+      RESTO = SOMA MOD 11
+      Se RESTO < 2: DV2 = 0
+      Senão: DV2 = 11 - RESTO
+      
+    Validação: DV1 == dígito 10 E DV2 == dígito 11
+
+  implementacao:
+    - passo: 1
+      codigo: "MOVE #CPF TO #CPF-STR"
+      descricao: "Converter número para string"
+    - passo: 2
+      codigo: "FOR #I = 1 TO 11 / MOVE SUBSTR(#CPF-STR,#I,1) TO #DIG(#I) / END-FOR"
+      descricao: "Extrair cada dígito em array"
+      linha: 272-275
+    - passo: 3
+      codigo: "Loop: #SOMA = SUM(#DIG(I) * #PESO) para I=1 to 9, PESO de 10 a 2"
+      descricao: "Calcular soma ponderada para DV1"
+      linha: 279-283
+    - passo: 4
+      codigo: "COMPUTE #RESTO = #SOMA - ((#SOMA / 11) * 11)"
+      descricao: "Calcular resto (módulo 11)"
+      linha: 284
+    - passo: 5
+      codigo: "IF #RESTO < 2 MOVE 0 TO #DV1 ELSE COMPUTE #DV1 = 11 - #RESTO"
+      descricao: "Aplicar regra de ajuste"
+      linha: 285-288
+    - passo: 6
+      codigo: "IF #DV1 NE #DIG(10) MOVE FALSE TO #CPF-VALIDO / ESCAPE ROUTINE"
+      descricao: "Validar DV1 contra dígito 10"
+      linha: 290-292
+    - passo: 7
+      codigo: "Loop: #SOMA = SUM(#DIG(I) * #PESO) para I=1 to 10, PESO de 11 a 2"
+      descricao: "Calcular soma ponderada para DV2"
+      linha: 296-300
+    - passo: 8
+      codigo: "COMPUTE #RESTO = #SOMA - ((#SOMA / 11) * 11)"
+      descricao: "Calcular resto (módulo 11)"
+      linha: 301
+    - passo: 9
+      codigo: "IF #RESTO < 2 MOVE 0 TO #DV2 ELSE COMPUTE #DV2 = 11 - #RESTO"
+      descricao: "Aplicar regra de ajuste"
+      linha: 302-305
+    - passo: 10
+      codigo: "IF #DV2 NE #DIG(11) MOVE FALSE TO #CPF-VALIDO"
+      descricao: "Validar DV2 contra dígito 11"
+      linha: 307-309
+
+  casos_teste:
+    - cpf: "11144477735"
+      esperado: VÁLIDO
+      descricao: "CPF fictício válido (exemplo)"
+    - cpf: "11111111111"
+      esperado: INVÁLIDO
+      descricao: "Todos os dígitos iguais (rejeitado por lei)"
+    - cpf: "00000000000"
+      esperado: INVÁLIDO
+      descricao: "Todos os dígitos 0"
+
+################################################################################
+# RESUMO EXECUTIVO
+################################################################################
+
+summary:
+  tipo_programa: "CRUD de Beneficiários com validação CPF"
+  
+  funcionalidade_principal: |
+    Permite inclusão ou alteração de beneficiário no arquivo 150 (BENEFICIARIO).
+    Implementa validações básicas (campos obrigatórios, CPF válido).
+    Calcula idade e aplica regra de suspensão para maiores de 75 anos.
+    Impede duplicação de CPF.
+    
+  tabelas_afetadas:
+    - BENEFICIARIO (arquivo 150): INSERT/UPDATE
+    
+  campos_criticos:
+    - CPF: chave primária, validado por módulo 11
+    - NOME: obrigatório
+    - DT-NASCIMENTO: obrigatório, usado para cálculo de idade
+    - STATUS: determinado por lógica de negócio (padrão 'A', suspenso se > 75 anos)
+    
+  regras_criticas:
+    - "CPF deve ser válido (módulo 11)"
+    - "Não permitir duplicação de CPF"
+    - "Idade > 75 anos: status = 'S'"
+    - "Em alteração: CPF, DT-NASC, SEXO, DT-CADASTRO imutáveis"
+    
+  lacunas_identificadas:
+    - "Sem validação de data real (ex: 32/13)"
+    - "Sem validação cruzada de COD-PROGRAMA"
+    - "Sem validação cruzada de COD-REGIAO"
+    - "Sem validação de NIS"
+    - "Idade calculada por truncamento de ano (imprecisa)"
+    - "Limite de 75 anos não justificado"
+    - "Transações sem garantia ACID completa"
+    
+  historico_manutencao:
+    - 15/03/1997: Criação (CARLOS ROBERTO DA SILVA)
+    - 22/08/2005: Adição validação CPF (MARCIA HELENA)
+    - 10/01/2011: Ajuste status idoso > 75 anos (JOSE FERREIRA)
+    - Última alteração: 10/01/2011 (15 anos de estabilidade)
+    
+  risco_geral: MÉDIO-ALTO
+  justificativa: |
+    Programa estável há 15 anos.
+    Validações CPF e unicidade são críticas.
+    Porém, múltiplas lacunas de validação (datas, referências externas, NIS).
+    Lógica de idade e suspensão necessita justificativa de negócio.
+
+################################################################################
+# RECOMENDAÇÕES PARA MODERNIZAÇÃO
+################################################################################
+
+modernization_recommendations:
+  
+  curto_prazo:
+    - id: MOD-001
+      titulo: "Externalizar constantes mágicas"
+      descricao: "Limite de idade (75) e valores de status ('A', 'S')"
+      esforco: BAIXO
+      impacto: "Facilita manutenção"
+      
+    - id: MOD-002
+      titulo: "Documentar origem da regra de 75 anos"
+      descricao: "Consultar JOSE FERREIRA ou registros de 2011"
+      esforco: BAIXO
+      impacto: "Valida suposição de negócio"
+      
+    - id: MOD-003
+      titulo: "Adicionar validação de data real"
+      descricao: "Validar MÊS 01-12, DIA válido para mês, DT-NASC <= hoje"
+      esforco: MÉDIO
+      impacto: "Previne dados corrompidos"
+
+  médio_prazo:
+    - id: MOD-004
+      titulo: "Implementar validação de chaves estrangeiras"
+      descricao: "COD-PROGRAMA e COD-REGIAO devem existir em tabelas de referência"
+      esforco: MÉDIO
+      impacto: "Elimina órfãos de dados"
+      
+    - id: MOD-005
+      titulo: "Implementar validação de NIS"
+      descricao: "Consultar INSS sobre algoritmo e regras de unicidade"
+      esforco: ALTO
+      impacto: "Integração com cadastro nacional"
+      
+    - id: MOD-006
+      titulo: "Cálculo preciso de idade"
+      descricao: "Considerar mês e dia (algoritmo mais complexo)"
+      esforco: MÉDIO
+      impacto: "Regra de 75 anos será mais precisa"
+
+  longo_prazo:
+    - id: MOD-007
+      titulo: "Migração para Java/Spring Boot"
+      descricao: "Converter CADBENEF para componente REST"
+      esforco: ALTO
+      impacto: "Modernização stack"
+      endpoints: |
+        POST /api/v1/beneficiarios (inclusão)
+        PUT /api/v1/beneficiarios/{cpf} (alteração)
+        GET /api/v1/beneficiarios/{cpf} (consulta)
+        
+    - id: MOD-008
+      titulo: "Adicionar auditoria completa"
+      descricao: "Timestamp preciso (com hora), usuário, IP, motivo da alteração"
+      esforco: MÉDIO
+      impacto: "Rastreamento de quem fez o quê, quando"
+      
+    - id: MOD-009
+      titulo: "Externalizar mensagens (i18n)"
+      descricao: "Suportar português, espanhol, inglês"
+      esforco: BAIXO
+      impacto: "Preparação para expansão"
+
+################################################################################
+# FIM DA ANÁLISE ARQUEOLÓGICA
+################################################################################

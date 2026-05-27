@@ -38,6 +38,40 @@ Prompt útil no Copilot Chat (cole o conteúdo de 2–3 arquivos `.NSN` no chat 
 
 ## Termos encontrados
 
+<<<<<<< HEAD
+| #   | Termo | Expansão | Programa | Contexto |
+| --- | ----- | -------- | -------- | -------- |
+| 1 | CPF | Cadastro de Pessoas Físicas | CADBENEF; CADDEPEND | Identificador único do beneficiário |
+| 2 | NIS | Número de Inscrição Social | CADBENEF | Número de inscrição no sistema social |
+| 3 | RG | Registro Geral | CADBENEF | Documento de identidade complementar |
+| 4 | BENEFICIARIO | Beneficiário | CADBENEF; CADDEPEND | Pessoa inscrita em programa social |
+| 5 | DEPENDENTES | Dependentes | CADDEPEND | Grupo de pessoas vinculadas ao beneficiário |
+| 6 | NOME | Nome | CADBENEF; CADDEPEND | Nome completo da pessoa física |
+| 7 | DT-NASCIMENTO | Data de Nascimento | CADBENEF | Data de nascimento (formato AAAAMMDD) |
+| 8 | SEXO | Sexo | CADBENEF; CADDEPEND | Sexo (M=Masculino, F=Feminino) |
+| 9 | IDADE | Idade | CADBENEF | Idade calculada em anos; critério de elegibilidade |
+| 10 | ENDERECO | Endereço | CADBENEF | Endereço residencial completo |
+| 11 | MUNICIPIO | Município | CADBENEF | Cidade de residência |
+| 12 | UF | Unidade Federativa | CADBENEF | Estado brasileiro (sigla 2 caracteres) |
+| 13 | CEP | Código de Endereçamento Postal | CADBENEF | Código postal brasileiro (8 dígitos) |
+| 14 | COD-REGIAO | Código da Região | CADBENEF | Código geográfico-administrativo da região |
+| 15 | TELEFONE | Telefone | CADBENEF | Telefone de contato do beneficiário |
+| 16 | RENDA-FAMILIAR | Renda Familiar | CADBENEF | Renda total mensal do núcleo familiar |
+| 17 | NUM-DEPENDENTES | Número de Dependentes | CADBENEF; CADDEPEND | Quantidade de dependentes (máximo 5) |
+| 18 | PROGRAMA-SOCIAL | Programa Social | CADPROG | Programa de benefícios governamental |
+| 19 | COD-PROGRAMA | Código do Programa | CADBENEF; CADPROG | Código numérico único do programa |
+| 20 | NOME-PROGRAMA | Nome do Programa | CADPROG | Nome descritivo do programa social |
+| 21 | TIPO | Tipo de Programa | CADPROG | Classificação: A(Assistencial), P(Previdenciário), T(Trabalho) |
+| 22 | VLR-BASE | Valor Base | CADPROG | Valor mensal base do benefício antes de ajustes |
+| 23 | FATOR-REAJUSTE | Fator de Reajuste | CADPROG | Índice percentual de ajuste para inflação |
+| 24 | FATOR-K | Fator de Correção | CADPROG | Fator multiplicador: 1.00 + (FATOR-REAJUSTE × 0.347215) |
+| 25 | RENDA-MAX | Renda Máxima | CADPROG | Limite máximo de renda para elegibilidade |
+| 26 | IDADE-MIN | Idade Mínima | CADPROG | Limite mínimo de idade para elegibilidade |
+| 27 | IDADE-MAX | Idade Máxima | CADPROG | Limite máximo de idade para elegibilidade |
+| 28 | STATUS | Status do Beneficiário | CADBENEF; CADDEPEND | Estado: A(Ativo), S(Idoso >75 anos), C(Cancelado), D(Desligado) |
+| 29 | DT-CADASTRO | Data de Cadastro | CADBENEF | Data de inclusão inicial no sistema |
+| 30 | DT-ATUALIZACAO | Data de Atualização | CADBENEF | Data da última alteração de dados |
+=======
 > Tabela consolidada com contribuições de todos os pares. Termos extraídos dos programas Natural (CALC*, BATCH*, CAD*, REL*, CONS*, VAL*) e dos DDMs Adabas. Quando um termo apareceu em mais de uma contribuição, foi enriquecido com a informação mais completa (linhas de código, ambiguidades, mapeamento para modernização).
 
 | #   | Termo                   | Expansão                                                            | Programa                                                   | Contexto                                                                                      |
@@ -95,6 +129,7 @@ Prompt útil no Copilot Chat (cole o conteúdo de 2–3 arquivos `.NSN` no chat 
 | 51  | `SIAFI`                 | Sistema Integrado de Administração Financeira (Gov. Federal)        | `BATCHPGT.NSN`, `legacy-docs/ARQUITETURA-ORIGINAL-1997.md` | Recebe empenhos via TXT batch. Modernizar para REST.                                          |
 | 52  | `AUDITORIA`             | Trilha append-only de eventos                                       | `AUDITORIA.ddm`, `BATCHCON.NSN#L170-L205`                  | Eventos `PG-CONFIRMADO`, `PG-DEVOLVIDO`.                                                      |
 | 53  | `CONCILIACAO`           | Bater PAGAMENTO emitido vs retorno CNAB                             | `BATCHCON.NSN`                                             | Processo diário de reconciliação.                                                             |
+>>>>>>> develop
 
 > Adicione mais linhas conforme necessário. Não se limite a 30!
 
