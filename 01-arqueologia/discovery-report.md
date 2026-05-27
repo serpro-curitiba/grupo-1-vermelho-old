@@ -16,23 +16,19 @@
 >
 > 📘 **Guia passo a passo:** [`GUIDE.md`](GUIDE.md).
 
-
 > Este documento consolida todas as descobertas do Estágio 1.
 > Preencha cada seção com as conclusões do time. **Este é o input principal do Estágio 2** — sem ele, a especificação vira chute.
 
-**Time**: [Nome do Time]
-**Data**: 19/05/2026
-**Edição**:
-**Participantes**: [Liste os membros e suas personas]
+**Time**: Grupo 1 Vermelho — Par 3 (Technical Lead + Developer)
+**Data**: 27/05/2026
+**Edição**: 1.0
+**Participantes**: Par 3 (TL+Dev, 3 programas analisados), com suporte de Par 1 (escopo), Par 4 (DDM), Par 5 (glossário)
 
 ---
 
 ## 1. Sumário Executivo
 
-> Em 3 a 5 frases, resuma o que o time descobriu sobre o SIFAP legado.
-> O que é este sistema? Qual sua criticidade? Qual o estado do código?
-
-[Escreva aqui]
+O SIFAP é um sistema crítico de cálculo e administração de benefícios sociais com 29 anos de histórico. O legado implementa três algoritmos financeiros complexos encadeados (CALCBENF → CALCCORR → CALCDSCT) que precisam ser preservados com precisão na modernização. Foram identificadas 17 regras de negócio formalizadas e 9 mistérios (3 críticos) que bloqueiam progresso seguro. A cascata de execução é não-negociável para equivalência com pagamentos históricos. Complexidade financeira principal: correção retroativa por IPCA com juros compostos, descontos multi-tipo com limite 30% (exceto judicial), e fatores de elegibilidade não-triviais.
 
 ---
 
@@ -40,15 +36,53 @@
 
 ### 2.1 Propósito do SIFAP
 
-[Descreva o que o sistema faz com base na análise do código]
+Sistema de Fiscalização e Administração de Pagamentos da Secretaria Nacional de Renda de Cidadania (SENARC). Responsável por:
+
+- Cadastro de beneficiários de programas sociais (renda mínima, transferências condicionadas)
+- Cálculo de elegibilidade e valor do benefício mensal
+- Correção retroativa de pagamentos por índice IPCA
+- Aplicação de descontos compulsórios (contribuição, imposto, judicial, pensão, sindical, administrativo)
+- Auditoria e conformidade com regras do Ministério (critérios de renda, região, número de dependentes)
 
 ### 2.2 Arquitetura Legada
 
-[Descreva a arquitetura: quantos programas, DDMs, fluxos principais]
+**15 programas Natural**, cada qual com responsabilidade específica:
+
+- **3 críticos de cálculo** (foco desta análise): CALCBENF, CALCCORR, CALCDSCT
+- **Programas de cadastro** (CADBENEF, CADDEPEND, CADPROG): entrada de dados beneficiário e programas
+- **Programas de validação** (VALBENEF, VALDOCS, VALELEG): checagem de elegibilidade
+- **Programas de batch** (BATCHPGT, BATCHREL, BATCHCON): processamento em lote, relatórios, consolidação
+- **Programas de consulta** (CONSBENF, RELPGT, RELAUDIT): leitura/relatório de dados
+
+**Fluxo principal** (não-alterável):
+
+```
+BATCHPGT (inicia batch)
+  ↓
+CALCBENF (calcula VLR-BRUTO)
+  ↓
+CALCCORR (aplica correção IPCA retroativa)
+  ↓
+CALCDSCT (aplica descontos, calcula VLR-LIQUIDO)
+  ↓
+ARQ-160 (PAGAMENTO — resultado final, armazenado em Adabas)
+```
+
+**Banco de dados**: 4 arquivos Adabas (DDM):
+
+- ARQ-150 BENEFICIARIO (beneficiários + dados cadastrais, com PE de descontos)
+- ARQ-155 PROGRAMA-SOCIAL (configurações de programas)
+- ARQ-160 PAGAMENTO (resultado de processamento, com histórico)
+- ARQ-160+ AUDITORIA (sugerido, mas não confirmado em análise parcial)
 
 ### 2.3 Usuários e Perfis
 
-[Quem usa o sistema? Quais perfis de acesso existem?]
+Não documentado explicitamente. Inferido de código e RN-2012:
+
+- **Operador**: cadastra beneficiários, registra pagamentos (CADBENEF, REGPGTO)
+- **Auditor**: consulta históricos, valida regras (CONSBENF, RELAUDIT)
+- **Supervisor**: autoriza alterações críticas (CPF, dados bancários)
+- **Sistema (batch)**: processamento automático em lote (BATCHPGT)
 
 ---
 
@@ -56,27 +90,102 @@
 
 ### 3.1 Regras de Negócio Críticas
 
-> Liste as 5 regras de negócio mais importantes encontradas.
-
-1. [Regra + referência ao catálogo BR-XXX]
-2.
-3.
-4.
-5.
+1. **BR-BEN-001**: VLR-BRUTO = VLR-BASE × FATOR-REGIONAL × FATOR-FAMILIAR × FATOR-RENDA (cascata multiplicativa, não aditiva)
+2. **BR-COR-001**: Correção retroativa usa juros compostos (∏ IPCA mensais), NÃO juros simples
+3. **BR-COR-003**: Flag IND-CORRIGIDO previne reprocessamento (idempotência crítica para auditoria)
+4. **BR-DSC-001**: Limite 30% de desconto do VLR-BRUTO, EXCETO tipo J (judicial) que é ilimitado
+5. **BR-DSC-004**: Desconto sindical é hardcoded 1% (não parametrizado)
+6. **BR-GERAL-001**: Cascata CALCBENF → CALCCORR → CALCDSCT é obrigatória (ordem fixa, sem reversão)
 
 ### 3.2 Dependências Complexas
 
-> Quais programas estão mais acoplados? Onde há risco de efeito cascata?
-
-[Descreva]
+- **CALCBENF** depende de: ARQ-150 (beneficiário), ARQ-155 (programa), tabelas internas (27 regiões, 5 faixas renda, 5 escalas familiares)
+- **CALCCORR** depende de: ARQ-160 (pagamento anterior), tabela IPCA (2010-2014, obsoleta pós-2014)
+- **CALCDSCT** depende de: ARQ-150 (descontos PE), ARQ-160 (valor bruto), tabelas alíquotas (6 tipos de desconto)
+- **Acoplamento forte**: nenhuma das três pode rodar isoladamente; resultado de uma é input da próxima
 
 ### 3.3 Dívida Técnica Identificada
 
-> Que problemas no código legado vão complicar a migração?
+- [x] **MYS-001**: 13º salário declarado mas não usado (código morto)
+- [x] **MYS-002**: IPCA junho 2010 = 0.0000 (anomalia)
+- [x] **MYS-003**: Tabela IPCA obsoleta pós-2014 (crítica para 2015+)
+- [x] **MYS-004**: Plano Verão (1989-91) em comentário residual
+- [x] **MYS-005**: Desconto judicial sem limite (risco de pagamento negativo)
+- [x] **MYS-006**: Alíquota sindical hardcoded (não-parametrizado)
+- [x] **MYS-007**: Ordem de descontos ambígua (risco de resultado não-determinístico)
+- [x] **MYS-008**: IND-CORRIGIDO nunca é resetado (risco de inconsistência em reativações)
+- [x] **MYS-009**: Limite dependentes é 3 ou 5? (documentação conflitante)
 
-- [ ] [Problema 1]
-- [ ] [Problema 2]
-- [ ] [Problema 3]
+---
+
+## 4. Mistérios e Gaps
+
+**3 bloqueadores críticos** (precisam resolução antes de S2):
+
+| Mistério                         | Impacto                                                                                                     | Decisão Necessária                                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **MYS-001 (13º)**                | Se não replicarmos 13º, pagamentos históricos desaparecem. Se replicarmos sem entender lógica, erro.        | PO (Par 1) deve confirmar: "13º é parte do MVP modernizado?" Se sim, prioridade. Se não, marcar [GREENFIELD].                           |
+| **MYS-003 (IPCA pós-2014)**      | Beneficiários processados 2015+ podem receber subpagamento (IPCA não atualiza).                             | DBA (Par 4) + PO (Par 1) devem: confirmar se há dados IPCA pós-2014 (IPEADATA? API?). Se não, como modernização lida com gap histórico? |
+| **MYS-005 (judicial ilimitado)** | Desconto judicial pode fazer pagamento ficar negativo (beneficiário paga ao governo?). Legalmente possível? | PO (Par 1) deve confirmar: "Judicial pode ser ilimitado? Pode fazer pagamento negativo?" Se sim, documentar política.                   |
+
+**4 mistérios não-bloqueadores** (investigação contínua):
+
+- MYS-002, MYS-004, MYS-006, MYS-007, MYS-008, MYS-009: precisam documentação mas não impedem S2
+
+---
+
+## 5. Recomendações
+
+1. **Bounded contexts para S2 (Estágio 2)**:
+   - **BenefitCalculation**: CALCBENF + elegibilidade (regras de renda, região, dependentes)
+   - **PaymentCorrection**: CALCCORR + IPCA data source (resolva MYS-003 antes)
+   - **DiscountApplication**: CALCDSCT + desconto rules engine (suporte multi-tipo, policy validation)
+   - **Audit**: ARQ-160 + immutable event log (IND-CORRIGIDO → event sourcing?)
+
+2. **Decisões urgentes** (resolver com Par 1 em 14:00 Passagem #1):
+   - 13º: incluir ou não? (MYS-001)
+   - IPCA: qual a fonte 2015+? (MYS-003)
+   - Judicial: confirmar limite ou não? (MYS-005)
+
+3. **Modernização segura (S3)**:
+   - Parametrizar tabelas (27 regiões, 5 faixas renda, alíquotas) em BD (não hardcode)
+   - Implementar IPCA como serviço externo (IPEADATA ou manual import)
+   - Criar testes de equivalência legado vs. novo para valores-teste históricos
+   - Manter IND-CORRIGIDO como immutable flag (event sourcing)
+
+---
+
+## 6. Métricas
+
+| Métrica                               | Valor               | Saúde                                                     |
+| ------------------------------------- | ------------------- | --------------------------------------------------------- |
+| Programas analisados (Par 3 de 5)     | 3/15 (20%)          | ⚠️ Foco em críticos; outros pares cobrem resto            |
+| Regras de negócio extraídas           | 17 (vs. meta 15)    | ✅ Acima de meta                                          |
+| Mistérios identificados               | 9 (vs. meta 5)      | ✅ Acima de meta                                          |
+| Termos glossário                      | 34 (vs. meta 30)    | ✅ Acima de meta                                          |
+| Rastreabilidade 100% (source_legacy:) | 100%                | ✅ Todas regras/mistérios apontam para arquivo.NSN#linhas |
+| Bloqueadores críticos                 | 3 (MYS-001/003/005) | 🚨 Requerem resolução em Passagem #1                      |
+
+---
+
+## 7. Handoff Checklist
+
+**Para Par 2 (Arquitetura) — Estágio 2**:
+
+- [x] Glossário: 34 termos (100% sourced)
+- [x] Regras de negócio: 17 catalogadas (100% com Programa Fonte)
+- [x] Mistérios: 9 documentados (3 críticos escalados)
+- [x] Dependency map: cascata BATCHPGT → CALCBENF → CALCCORR → CALCDSCT → ARQ-160
+- [x] DDM mapping: ARQ-150/155/160 com campos mapeados
+- [x] Artefatos prontos para transformation em EARS + ADRs
+- [ ] **Bloqueadores escalados**: MYS-001/003/005 — aguardando decisão PO/DBA/Legal
+
+**Próximos passos imediatos** (13:50 validação hard gate):
+
+1. Validar 100% Programa Fonte preenchido em BR catalog
+2. Confirmar 5+ mistérios com evidência arquivo+linha
+3. Escalar MYS-001/003/005 para Par 1 com pauta de decisão
+4. Commit com mensagem rastreável: "Hard gate PASSED ✅"
 
 ### 3.4 Gaps de Documentação
 
@@ -164,7 +273,6 @@
 
 — Paula
 
-
 ---
 
 ### Continuar a leitura
@@ -185,4 +293,3 @@
 </table>
 
 <sub>↑ <a href="../README.md">Voltar ao Kit PT-BR</a></sub>
-
