@@ -214,4 +214,3 @@ flowchart LR
 </table>
 
 <sub>↑ <a href="README.md">Voltar ao Kit PT-BR</a></sub>
-
