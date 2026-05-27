@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: sifap-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sifap}
+    username: ${SPRING_DATASOURCE_USERNAME:sifap}
+    password: ${SPRING_DATASOURCE_PASSWORD:sifap_local}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    schemas: pagamentos,beneficiarios,auditoria,programas
+    default-schema: pagamentos
+    create-schemas: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.gov.sifap: INFO
+    org.springframework.modulith: INFO
