@@ -62,17 +62,17 @@ Prompt útil no Copilot Chat (cole o conteúdo de 2–3 arquivos `.NSN` no chat 
 | 17  | `CONCILIACAO` | Bater PAGAMENTO emitido vs retorno CNAB | `BATCHCON.NSN` | Processo diário. |
 | 18  | `WORK FILE` | Arquivo sequencial temporário (não-DDM) | `BATCHCON.NSN#L106` | `WORK FILE 1` = retorno CNAB BB. |
 | 19  | `JCL` | Job Control Language (script batch mainframe) | `BATCHREL.NSN` (param `#COMPETENCIA`) | Modernizado p/ scheduler (REQ-PAY-001). |
-| 20  |       |          |          |          |
-| 21  |       |          |          |          |
-| 22  |       |          |          |          |
-| 23  |       |          |          |          |
-| 24  |       |          |          |          |
-| 25  |       |          |          |          |
-| 26  |       |          |          |          |
-| 27  |       |          |          |          |
-| 28  |       |          |          |          |
-| 29  |       |          |          |          |
-| 30  |       |          |          |          |
+| 20  | `SIFAP` | Sistema de Fiscalização e Administração de Pagamentos | Cabeçalhos dos programas | Sigla do sistema legado modernizado. |
+| 21  | `IPCA` | Índice Nacional de Preços ao Consumidor Amplo | `CALCCORR.NSN` | Índice oficial usado para correção retroativa. |
+| 22  | `NIS` | Número de Identificação Social | `BATCHPGT.NSN`, `CONSBENF.NSN` | Identificador social adicional ao CPF. |
+| 23  | `DSCT` | Desconto | `CALCDSCT.NSN`, `PAGAMENTO.ddm` | Valor ou percentual deduzido do bruto. |
+| 24  | `LIQ` | Líquido | `BATCHREL.NSN`, `RELPGT.NSN` | Valor final após descontos. |
+| 25  | `VLR` | Valor | `BATCHPGT.NSN`, `CALCBENF.NSN` | Prefixo de campos monetários. |
+| 26  | `QTD` | Quantidade | `BATCHPGT.NSN`, `RELAUDIT.NSN` | Contadores de processo e auditoria. |
+| 27  | `TOT` | Total | `BATCHREL.NSN`, `RELPGT.NSN` | Acumuladores de totalização. |
+| 28  | `COD` | Código | `CADPROG.NSN`, `VALELEG.NSN` | Prefixo de identificadores de domínio. |
+| 29  | `DT` | Data | `CADBENEF.NSN`, `RELPGT.NSN` | Prefixo para campos de data. |
+| 30  | `HR` | Hora | `BATCHCON.NSN`, `RELAUDIT.NSN` | Prefixo para campos de hora/evento. |
 
 > Adicione mais linhas conforme necessário. Não se limite a 30!
 
@@ -84,9 +84,9 @@ Prompt útil no Copilot Chat (cole o conteúdo de 2–3 arquivos `.NSN` no chat 
 
 ## Observações
 
-- Anote aqui qualquer padrão de nomenclatura que o time identificou:
-- Convenções de prefixo/sufixo encontradas:
-- Termos ambíguos que precisam de validação com especialista:
+- Anote aqui qualquer padrão de nomenclatura que o time identificou: prefixos funcionais por domínio foram recorrentes (CAD = cadastro, CALC = cálculo, VAL = validação, REL = relatório, CONS = consulta, BATCH = processamento em lote). Em variáveis, prefixos de campo também são consistentes (DT, HR, COD, NUM, VLR, QTD, TOT).
+- Convenções de prefixo/sufixo encontradas: variáveis locais de trabalho usam # no Natural (ex.: #VLR-BASE, #QTD-ERROS); sufixos de contexto aparecem com frequência (BENEF, PROG, PGTO, DSCT, LIQ); views de arquivos Adabas seguem padrão com -V (ex.: BENEFICIARIO-V, PAGAMENTO-V).
+- Termos ambíguos que precisam de validação com especialista: PAG (página x pagamento), REG (região x registro), DESC (descrição x desconto), SUB (subtotal x subrotina), CONT (controle x continuação), RND (arredondamento, provável), BENF (benefício x beneficiário dependendo do programa).
 
 ---
 
