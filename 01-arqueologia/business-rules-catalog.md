@@ -46,21 +46,27 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 | ID     | Regra de Negócio | Programa Fonte | Campos DDM | Nível de Risco | Notas |
 | ------ | ---------------- | -------------- | ---------- | -------------- | ----- |
-| BR-001 |                  |                |            |                |       |
-| BR-002 |                  |                |            |                |       |
-| BR-003 |                  |                |            |                |       |
-| BR-004 |                  |                |            |                |       |
-| BR-005 |                  |                |            |                |       |
-| BR-006 |                  |                |            |                |       |
-| BR-007 |                  |                |            |                |       |
-| BR-008 |                  |                |            |                |       |
-| BR-009 |                  |                |            |                |       |
-| BR-010 |                  |                |            |                |       |
-| BR-011 |                  |                |            |                |       |
-| BR-012 |                  |                |            |                |       |
-| BR-013 |                  |                |            |                |       |
-| BR-014 |                  |                |            |                |       |
-| BR-015 |                  |                |            |                |       |
+| BR-001 | CPF deve ser válido pelo algoritmo mod-11 (dois dígitos verificadores) | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L165-L220` | `BENEFICIARIO.CPF` | CRÍTICO | Mesma lógica replicada em VALDOCS.NSN |
+| BR-002 | CPF com todos os dígitos iguais é inválido, EXCETO quando começa com `000` (exceção "teste governo") | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L178-L188` | `BENEFICIARIO.CPF` | CRÍTICO | Regra ESCONDIDA — back door |
+| BR-003 | CPF com prefixos especiais (`000`, `001`, `002`, `010`, `011`, `099`, `100`, `999`) bypassa toda validação de documentos | `01-arqueologia/legado-sifap/natural-programs/VALDOCS.NSN#L150-L165` | `BENEFICIARIO.CPF` | CRÍTICO | Regra ESCONDIDA — back door governo/teste |
+| BR-004 | CPF zero é inválido em validação de documentos | `01-arqueologia/legado-sifap/natural-programs/VALDOCS.NSN#L92-L96` | `BENEFICIARIO.CPF` | ALTO | |
+| BR-005 | Data de nascimento deve ter ano entre 1900 e ano atual | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L233-L237` | `BENEFICIARIO.DT-NASCIMENTO` | ALTO | |
+| BR-006 | Data de nascimento deve ter mês 1–12 e dia válido por mês; fevereiro aceita até 29 sempre (não checa bissexto) | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L88-L102, L237-L244` | `BENEFICIARIO.DT-NASCIMENTO` | ALTO | BUG histórico — fev 29 sempre válido |
+| BR-007 | Nome deve ser não vazio e conter ao menos um espaço (nome + sobrenome) | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L249-L262` | `BENEFICIARIO.NOME` | MÉDIO | |
+| BR-008 | UF deve ser uma das 27 siglas válidas quando preenchida | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L57-L83, L132-L148` | `BENEFICIARIO.UF` | MÉDIO | |
+| BR-009 | Status de beneficiário só pode ser A, S, C, I ou D | `01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L150-L156` | `BENEFICIARIO.STATUS` | ALTO | |
+| BR-010 | RG deve ter ao menos 5 caracteres não vazios | `01-arqueologia/legado-sifap/natural-programs/VALDOCS.NSN#L130-L143` | `BENEFICIARIO.RG` | MÉDIO | |
+| BR-011 | Para elegibilidade, beneficiário deve estar com STATUS = `A`; S, C, D e I bloqueiam | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L100-L120` | `BENEFICIARIO.STATUS` | CRÍTICO | Bloqueio explícito por status |
+| BR-012 | Programa deve existir e estar com STATUS-PROG = `A`; senão rejeita | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L76-L88` | `PROGRAMA-SOCIAL.STATUS-PROG` | ALTO | |
+| BR-013 | Região 99 (internacional/diplomático) bypassa todas as regras de elegibilidade | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L90-L96` | `BENEFICIARIO.COD-REGIAO` | CRÍTICO | Regra ESCONDIDA — exceção total |
+| BR-014 | Idade do beneficiário deve respeitar IDADE-MIN e IDADE-MAX do programa quando > 0 | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L124-L138` | `BENEFICIARIO.DT-NASCIMENTO`, `PROGRAMA-SOCIAL.IDADE-MIN/MAX` | ALTO | |
+| BR-015 | Renda familiar não pode exceder RENDA-MAX do programa quando > 0 | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L141-L148` | `BENEFICIARIO.RENDA-FAMILIAR`, `PROGRAMA-SOCIAL.RENDA-MAX` | CRÍTICO | Regra financeira |
+| BR-016 | Programa tipo A (assistencial): renda > 600 sem dependentes rejeita; exige DOCUMENTOS-OK = `S` | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L152-L168` | `PROGRAMA-SOCIAL.TIPO`, `BENEFICIARIO.RENDA-FAMILIAR`, `BENEFICIARIO.NUM-DEPENDENTES`, `BENEFICIARIO.DOCUMENTOS-OK` | ALTO | Limite mágico `600.00` |
+| BR-017 | Programa tipo P (previdenciário): idade < 60 rejeita | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L170-L176` | `PROGRAMA-SOCIAL.TIPO`, `BENEFICIARIO.DT-NASCIMENTO` | ALTO | |
+| BR-018 | Programa tipo T (trabalho): idade fora da faixa 16–65 rejeita | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L178-L184` | `PROGRAMA-SOCIAL.TIPO`, `BENEFICIARIO.DT-NASCIMENTO` | ALTO | |
+| BR-019 | Tipo de programa desconhecido (≠ A, P, T) rejeita elegibilidade | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L186-L189` | `PROGRAMA-SOCIAL.TIPO` | MÉDIO | |
+| BR-020 | COD-ELEGIBILIDADE iniciando com `R` exige NIS válido (≠ 0) | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L210-L218` | `PROGRAMA-SOCIAL.COD-ELEGIBILIDADE`, `BENEFICIARIO.NIS` | ALTO | |
+| BR-021 | COD-ELEGIBILIDADE com `D` na posição 2 exige ao menos 1 dependente | `01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L220-L227` | `PROGRAMA-SOCIAL.COD-ELEGIBILIDADE`, `BENEFICIARIO.NUM-DEPENDENTES` | ALTO | |
 
 > Adicione mais linhas conforme necessário. Lembre-se: existem **10 regras escondidas** no código!
 

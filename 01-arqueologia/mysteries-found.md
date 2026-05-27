@@ -49,11 +49,11 @@
 | MYS-003 | CPF de dependente aceita valor sentinela 00000000000 | 01-arqueologia/legado-sifap/adabas-ddms/BENEFICIARIO.ddm | Integridade de dados e joins por CPF podem quebrar | ALTA |
 | MYS-004 | Programa de relatório legado filtra ações EX da auditoria | 01-arqueologia/legado-sifap/adabas-ddms/AUDITORIA.ddm | Trilha de exclusão pode sumir na migração se reproduzir filtro implícito | ALTA |
 | MYS-005 | Datas numéricas usam 0 para “sem prazo” em alguns campos | 01-arqueologia/legado-sifap/adabas-ddms/BENEFICIARIO.ddm e PAGAMENTO.ddm | Parse de data inválido e perda de semântica no destino | MÉDIA |
-| MYS-006 |           |                 |                   |           |
-| MYS-007 |           |                 |                   |           |
-| MYS-008 |           |                 |                   |           |
-| MYS-009 |           |                 |                   |           |
-| MYS-010 |           |                 |                   |           |
+| MYS-006 | CPFs com todos os dígitos iguais começando com `000` são aceitos como válidos (exceção "teste governo") | 01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L178-L188 | Back door: permite emissão e pagamento para CPFs sintéticos em produção | ALTA |
+| MYS-007 | Lista de 8 prefixos especiais (`000,001,002,010,011,099,100,999`) bypassa toda validação de documentos e zera contadores de erro | 01-arqueologia/legado-sifap/natural-programs/VALDOCS.NSN#L41-L51, L150-L165 | Back door amplo: qualquer CPF com prefixo da lista é aceito mesmo com DV errado | ALTA |
+| MYS-008 | Região 99 bypassa todas as regras de elegibilidade (status, idade, renda, docs, tipo) | 01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L90-L96 | Pagamentos podem fluir sem nenhum gate quando COD-REGIAO=99 | ALTA |
+| MYS-009 | Fevereiro aceita até dia 29 em qualquer ano (tabela #DIAS-MES(2)=29 fixa, sem cálculo de bissexto) | 01-arqueologia/legado-sifap/natural-programs/VALBENEF.NSN#L88-L102 | Datas inválidas (ex: 29/02/2023) passam pelo legado e serão rejeitadas no destino → divergência | MÉDIA |
+| MYS-010 | Valor mágico `600.00` separa elegibilidade tipo A sem qualquer constante nomeada nem ADR | 01-arqueologia/legado-sifap/natural-programs/VALELEG.NSN#L152-L160 | Limite financeiro escondido — não rastreável a política externa | MÉDIA |
 
 ## Detalhamento dos Mistérios
 
@@ -79,15 +79,15 @@
 
 > Dica: existem **3 easter eggs** escondidos no código legado. Registre aqui os que encontrar:
 
-1. [ ] Easter Egg 1: \_\_\_
-2. [ ] Easter Egg 2: \_\_\_
-3. [ ] Easter Egg 3: \_\_\_
+1. [x] Easter Egg 1: CPF com todos iguais e prefixo `000` é aceito (VALBENEF.NSN)
+2. [x] Easter Egg 2: 8 prefixos especiais bypassam validação de docs (VALDOCS.NSN)
+3. [x] Easter Egg 3: Região 99 bypassa toda elegibilidade (VALELEG.NSN)
 
 ## Resumo
 
-- Total de mistérios encontrados: 5
-- Confiança alta: 4
-- Confiança média: 1
+- Total de mistérios encontrados: 10
+- Confiança alta: 7
+- Confiança média: 3
 - Confiança baixa: 0
 - Easter eggs encontrados: \_\_\_ / 3
 
