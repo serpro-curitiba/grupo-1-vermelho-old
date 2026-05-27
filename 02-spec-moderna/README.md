@@ -4,8 +4,6 @@
 
 ![ESTÁGIO 02 Spec Moderna](https://img.shields.io/badge/ESTÁGIO-02%20Spec%20Moderna-00A4EF?style=for-the-badge) ![LIDERA Par 2 (EA+SA)](https://img.shields.io/badge/LIDERA-Par%202%20%28EA+SA%29-1A1A1A?style=for-the-badge) ![ENTREGÁVEL EARS + ADRs](https://img.shields.io/badge/ENTREGÁVEL-EARS%20+%20ADRs-737373?style=for-the-badge)
 
-
-
 > 🗺 **Você está aqui:** [Kit PT-BR](../README.md) → **Estágio 2**
 
 > **Para quem é isto?** Quem está chegando no estágio de spec moderna e quer a visão geral.
@@ -29,11 +27,16 @@
 
 ## Conteúdo
 
-| Arquivo                                    | Propósito                                |
-| ------------------------------------------ | ---------------------------------------- |
-| [`GUIDE.md`](GUIDE.md)                     | Guia passo a passo deste estágio         |
-| [`ADR-TEMPLATE.md`](ADR-TEMPLATE.md)       | Modelo de Registro de Decisão Arquitetural |
-| [`scope-decisions.md`](scope-decisions.md) | Modelo de decisões de escopo           |
+| Arquivo                                                                          | Propósito                                                   |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [`GUIDE.md`](GUIDE.md)                                                           | Guia passo a passo deste estágio                            |
+| [`SPECIFICATION.md`](SPECIFICATION.md)                                           | **Spec consolidada do Estágio 2** (C4 + REQ-IDs + sign-off) |
+| [`ADR-INDEX.md`](ADR-INDEX.md)                                                   | Índice navegável das ADRs vigentes                          |
+| [`ADR-002-migracao-dados.md`](ADR-002-migracao-dados.md)                         | Estratégia Strangler Fig (Adabas → PostgreSQL)              |
+| [`ADR-003-autenticacao-e-autorizacao.md`](ADR-003-autenticacao-e-autorizacao.md) | OAuth2/OIDC com Entra ID + gov.br + RBAC                    |
+| [`ADR-005-estrategia-deploy-e-infra.md`](ADR-005-estrategia-deploy-e-infra.md)   | Docker Compose + CI + Terraform draft                       |
+| [`ADR-TEMPLATE.md`](ADR-TEMPLATE.md)                                             | Modelo de Registro de Decisão Arquitetural                  |
+| [`scope-decisions.md`](scope-decisions.md)                                       | Decisões de escopo (18 itens + 6 greenfield) com sign-off   |
 
 ---
 

@@ -18,21 +18,21 @@ Substituir o job batch noturno do SIFAP legado (`BATCHPGT.NSN`) por um caso de u
 
 ### 1.1 Personas envolvidas
 
-| Persona | Como participa |
-|---|---|
-| Gestor (administrador) | Dispara a geração do ciclo via portal; aprova exceções. |
-| Sistema (scheduler) | Pode disparar geração agendada (ex.: dia 25 de cada mês). |
+| Persona                | Como participa                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Gestor (administrador) | Dispara a geração do ciclo via portal; aprova exceções.                             |
+| Sistema (scheduler)    | Pode disparar geração agendada (ex.: dia 25 de cada mês).                           |
 | Beneficiário / Cidadão | Não interage diretamente; consulta o resultado pelo portal cidadão (spec separada). |
-| Fiscal | Lê o ciclo gerado para conferência amostral. |
+| Fiscal                 | Lê o ciclo gerado para conferência amostral.                                        |
 
 ### 1.2 Escopo
 
-| Dentro do escopo | Fora do escopo (specs separadas) |
-|---|---|
-| Criação do agregado `CicloPagamento` | Emissão de remessa CNAB 240 (`002-emissao-remessa-cnab`) |
-| Cálculo do valor de cada `Pagamento` | Envio de empenho SIAFI (`003-empenho-siafi`) |
-| Marcação de inelegíveis com motivo | Conciliação de retornos bancários (`004-conciliacao-cnab`) |
-| Publicação de evento `CicloIniciado` e `PagamentoCalculado` | Notificação ao cidadão (`005-portal-cidadao`) |
+| Dentro do escopo                                            | Fora do escopo (specs separadas)                           |
+| ----------------------------------------------------------- | ---------------------------------------------------------- |
+| Criação do agregado `CicloPagamento`                        | Emissão de remessa CNAB 240 (`002-emissao-remessa-cnab`)   |
+| Cálculo do valor de cada `Pagamento`                        | Envio de empenho SIAFI (`003-empenho-siafi`)               |
+| Marcação de inelegíveis com motivo                          | Conciliação de retornos bancários (`004-conciliacao-cnab`) |
+| Publicação de evento `CicloIniciado` e `PagamentoCalculado` | Notificação ao cidadão (`005-portal-cidadao`)              |
 
 ---
 
@@ -165,12 +165,12 @@ The system shall aplicar `fatorRegional` lido da tabela de 25 regiões cadastrad
 
 The system shall calcular `fatorFamiliar` a partir do número de dependentes:
 
-| Dependentes | Fórmula |
-|---|---|
-| 0 | `1.0000` |
-| 1 a 2 | `1.0000 + (n × 0.0500)` |
-| 3 a 4 | `1.1000 + ((n − 2) × 0.0300)` |
-| 5+ | `1.1600 + ((n − 4) × 0.0200)` |
+| Dependentes | Fórmula                       |
+| ----------- | ----------------------------- |
+| 0           | `1.0000`                      |
+| 1 a 2       | `1.0000 + (n × 0.0500)`       |
+| 3 a 4       | `1.1000 + ((n − 2) × 0.0300)` |
+| 5+          | `1.1600 + ((n − 4) × 0.0200)` |
 
 - **source_legacy:** `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L249-L262`
 - **Prioridade:** must
@@ -257,27 +257,27 @@ When qualquer evento de domínio do ciclo for publicado, the system shall garant
 
 ## 4. Mapa de rastreabilidade
 
-| REQ-ID | Origem legado | Tipo |
-|---|---|---|
-| REQ-PAY-001 | `BATCHPGT.NSN#L168-L172` | Adaptação |
-| REQ-PAY-002 | `BATCHPGT.NSN#L201-L213` | Adaptação |
-| REQ-PAY-003 | `[GREENFIELD]` | Novo |
-| REQ-PAY-010 | `BATCHPGT.NSN#L196-L200` | Paridade |
-| REQ-PAY-011 | `BATCHPGT.NSN#L188-L195` | Paridade |
-| REQ-PAY-012 | `BATCHPGT.NSN#L222-L235` | Paridade |
-| REQ-PAY-020 | `BATCHPGT.NSN#L277-L278` | Paridade |
-| REQ-PAY-021 | `BATCHPGT.NSN#L243-L247` | Paridade + mistério aberto (posições 26-27 da tabela) |
-| REQ-PAY-022 | `BATCHPGT.NSN#L249-L262` | Paridade |
-| REQ-PAY-023 | `BATCHPGT.NSN#L153-L161` | Paridade |
-| REQ-PAY-024 | `BATCHPGT.NSN#L264-L275` | Paridade |
-| REQ-PAY-030 | `BATCHPGT.NSN#L173-L177` | Adaptação (sequence PG) |
-| REQ-PAY-031 | `BATCHPGT.NSN#L181-L184` | Paridade (decisão pendente) |
-| REQ-PAY-040 | `[GREENFIELD]` | Novo (Outbox) |
-| REQ-PAY-041 | `[GREENFIELD]` | Novo (Outbox) |
-| REQ-PAY-042 | `BATCHPGT.NSN#L335-L345` | Adaptação |
-| REQ-PAY-050 | `[GREENFIELD]` | Novo (RBAC) |
-| REQ-PAY-051 | `[GREENFIELD]` | Novo (LGPD) |
-| REQ-PAY-052 | DDM `AUDITORIA` + escritas legacy | Adaptação |
+| REQ-ID      | Origem legado                     | Tipo                                                  |
+| ----------- | --------------------------------- | ----------------------------------------------------- |
+| REQ-PAY-001 | `BATCHPGT.NSN#L168-L172`          | Adaptação                                             |
+| REQ-PAY-002 | `BATCHPGT.NSN#L201-L213`          | Adaptação                                             |
+| REQ-PAY-003 | `[GREENFIELD]`                    | Novo                                                  |
+| REQ-PAY-010 | `BATCHPGT.NSN#L196-L200`          | Paridade                                              |
+| REQ-PAY-011 | `BATCHPGT.NSN#L188-L195`          | Paridade                                              |
+| REQ-PAY-012 | `BATCHPGT.NSN#L222-L235`          | Paridade                                              |
+| REQ-PAY-020 | `BATCHPGT.NSN#L277-L278`          | Paridade                                              |
+| REQ-PAY-021 | `BATCHPGT.NSN#L243-L247`          | Paridade + mistério aberto (posições 26-27 da tabela) |
+| REQ-PAY-022 | `BATCHPGT.NSN#L249-L262`          | Paridade                                              |
+| REQ-PAY-023 | `BATCHPGT.NSN#L153-L161`          | Paridade                                              |
+| REQ-PAY-024 | `BATCHPGT.NSN#L264-L275`          | Paridade                                              |
+| REQ-PAY-030 | `BATCHPGT.NSN#L173-L177`          | Adaptação (sequence PG)                               |
+| REQ-PAY-031 | `BATCHPGT.NSN#L181-L184`          | Paridade (decisão pendente)                           |
+| REQ-PAY-040 | `[GREENFIELD]`                    | Novo (Outbox)                                         |
+| REQ-PAY-041 | `[GREENFIELD]`                    | Novo (Outbox)                                         |
+| REQ-PAY-042 | `BATCHPGT.NSN#L335-L345`          | Adaptação                                             |
+| REQ-PAY-050 | `[GREENFIELD]`                    | Novo (RBAC)                                           |
+| REQ-PAY-051 | `[GREENFIELD]`                    | Novo (LGPD)                                           |
+| REQ-PAY-052 | DDM `AUDITORIA` + escritas legacy | Adaptação                                             |
 
 ---
 
@@ -292,8 +292,8 @@ When qualquer evento de domínio do ciclo for publicado, the system shall garant
 - [x] Toda EARS tem `source_legacy:` (HARD GATE).
 - [x] REQs cobrem cenários de erro (REQ-PAY-002, 003, 011, 012).
 - [x] Cenários Gherkin nas histórias-chave.
-- [ ] Revisão de Par 1 (PO + RE) registrada como comentário no PR.
-- [ ] ADR-0002 e ADR-0003 abertos (Par 2).
+- [x] Revisão de Par 1 (PO + RE) registrada — sign-off em [`02-spec-moderna/SPECIFICATION.md §9`](../../02-spec-moderna/SPECIFICATION.md).
+- [x] ADR-0002 e ADR-0003 abertos (Par 2) — ver [ADR-INDEX](../../02-spec-moderna/ADR-INDEX.md).
 - [ ] `plan.md`, `data-model.md`, `contracts/openapi.yaml` e `tasks.md` gerados via `/speckit.plan` + `/speckit.tasks`.
 
 ## 7. Mistérios e decisões abertas

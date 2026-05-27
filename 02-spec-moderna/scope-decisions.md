@@ -16,7 +16,6 @@
 >
 > 📘 **Guia passo a passo:** [`GUIDE.md`](GUIDE.md).
 
-
 > Para cada funcionalidade encontrada no Estágio 1, decida: **Migrar**, **Descartar** ou **Evoluir**.
 >
 > - **Migrar**: trazer para o SIFAP 2.0 como está (mesma lógica, nova tecnologia)
@@ -26,7 +25,7 @@
 **Time**: Grupo 1 · Vermelho
 **Data**: 27/05/2026
 **Edição**: Workshop SIFAP 2.0
-**Par 1 (Product Owner) responsável**: [a preencher]
+**Par 1 (Product Owner) responsável**: Paula (consolidando as 10 personas)
 **Par 2 (Arquitetura) co-autor**: EA + SA
 
 ## Por que isso importa
@@ -46,26 +45,26 @@ Pergunte de cada funcionalidade:
 
 ## Decisões por Funcionalidade
 
-| #   | Funcionalidade            | Decisão  | Justificativa | Regra de Negócio (BR-XXX) | Prioridade |
-| --- | ------------------------- | -------- | ------------- | ------------------------- | ---------- |
-| 1   | Cadastro de Beneficiários (CADBENEF.NSN) | Migrar | Entidade core do domínio; CRUD direto em PostgreSQL preserva CPF/UF/dependentes. | BR-001, BR-002 | Alta |
-| 2   | Cadastro de Dependentes (CADDEPEND.NSN) | Migrar | Insumo do fator familiar (BR-005). Pode ir como sub-recurso do beneficiário. | BR-005 (via FATOR-FAM) | Alta |
-| 3   | Cadastro de Programa Social (CADPROG.NSN) | Migrar | Necessário para validação ativa/inativa e VLR-BASE. | BR-004 | Alta |
-| 4   | Consulta de Beneficiários (CONSBENF.NSN) | Evoluir | Migra como REST + UI Angular com filtros. Substitui terminal 3270. | — | Alta |
-| 5   | Geração mensal de pagamentos (BATCHPGT.NSN) | Migrar | **Caso de uso âncora** do Estágio 3 — REQ-PAY-001..052 da spec 001. Preservar comportamento bit-a-bit. | BR-001..BR-006 | Alta |
-| 6   | Cálculo de benefícios (CALCBENF.NSN) | Migrar | Núcleo financeiro; 5 fatores (regional, familiar, renda, idade, reajuste). Testes de equivalência obrigatórios. | BR-005 | Alta |
-| 7   | Cálculo de correção (CALCCORR.NSN) | Migrar | Atualização monetária de pagamentos atrasados. | a catalogar pelo Par 3 | Média |
-| 8   | Cálculo de descontos (CALCDSCT.NSN) | Migrar | Regra do teto de 30% com exceção judicial (exemplo de referência do GUIDE). | BR-013 (Par 3) | Alta |
-| 9   | Validação CPF (VALDOCS.NSN) | Evoluir | Substituir algoritmo manual por biblioteca validada + integração futura com Receita REST. | — | Média |
-| 10  | Validação de elegibilidade (VALELEG.NSN) | Migrar | Regras de status e programa ativo (BR-001, BR-004). | BR-001, BR-004 | Alta |
-| 11  | Conciliação CNAB 240 (BATCHCON.NSN) | Migrar | Integração crítica com Banco do Brasil. Layout CNAB preservado. | BR-007, BR-008 | Alta |
-| 12  | Integração Banco Real (BATCHCON.NSN#L207-L225) | **Descartar** | Código zumbi desde 2007 (Santander adquiriu o Banco Real). Ver MYS-001 e BR-012. | BR-012 | — |
-| 13  | Relatórios consolidados mensais (BATCHREL.NSN) | Migrar | Aceito pelo TCU há 23 anos; mudar layout requer aprovação externa. | BR-009, BR-010, BR-011 | Alta |
-| 14  | Relatório de pagamentos por período (RELPGT.NSN) | Evoluir | UI Angular + export CSV/PDF. Migrar regras de agrupamento. | — | Média |
-| 15  | Trilha de auditoria (RELAUDIT.NSN + AUDITORIA.ddm) | Migrar | Append-only obrigatório; base de evidência LGPD/TCU. | BR-008 | Alta |
-| 16  | Tabela `#TAB-REG` posições 26-27 | **Descartar** | Sem documentação e sem uso. Ver MYS-002. | BR-006 | — |
-| 17  | Spool de impressão mainframe | **Descartar** | Substituído por geração PDF/CSV sob demanda. | — | — |
-| 18  | Autenticação por terminal 3270 | **Descartar** | Substituído por OAuth2/JWT + RBAC (REQ-PAY-051). | — | — |
+| #   | Funcionalidade                                     | Decisão       | Justificativa                                                                                                   | Regra de Negócio (BR-XXX) | Prioridade |
+| --- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------- |
+| 1   | Cadastro de Beneficiários (CADBENEF.NSN)           | Migrar        | Entidade core do domínio; CRUD direto em PostgreSQL preserva CPF/UF/dependentes.                                | BR-001, BR-002            | Alta       |
+| 2   | Cadastro de Dependentes (CADDEPEND.NSN)            | Migrar        | Insumo do fator familiar (BR-005). Pode ir como sub-recurso do beneficiário.                                    | BR-005 (via FATOR-FAM)    | Alta       |
+| 3   | Cadastro de Programa Social (CADPROG.NSN)          | Migrar        | Necessário para validação ativa/inativa e VLR-BASE.                                                             | BR-004                    | Alta       |
+| 4   | Consulta de Beneficiários (CONSBENF.NSN)           | Evoluir       | Migra como REST + UI Angular com filtros. Substitui terminal 3270.                                              | —                         | Alta       |
+| 5   | Geração mensal de pagamentos (BATCHPGT.NSN)        | Migrar        | **Caso de uso âncora** do Estágio 3 — REQ-PAY-001..052 da spec 001. Preservar comportamento bit-a-bit.          | BR-001..BR-006            | Alta       |
+| 6   | Cálculo de benefícios (CALCBENF.NSN)               | Migrar        | Núcleo financeiro; 5 fatores (regional, familiar, renda, idade, reajuste). Testes de equivalência obrigatórios. | BR-005                    | Alta       |
+| 7   | Cálculo de correção (CALCCORR.NSN)                 | Migrar        | Atualização monetária de pagamentos atrasados.                                                                  | a catalogar pelo Par 3    | Média      |
+| 8   | Cálculo de descontos (CALCDSCT.NSN)                | Migrar        | Regra do teto de 30% com exceção judicial (exemplo de referência do GUIDE).                                     | BR-013 (Par 3)            | Alta       |
+| 9   | Validação CPF (VALDOCS.NSN)                        | Evoluir       | Substituir algoritmo manual por biblioteca validada + integração futura com Receita REST.                       | —                         | Média      |
+| 10  | Validação de elegibilidade (VALELEG.NSN)           | Migrar        | Regras de status e programa ativo (BR-001, BR-004).                                                             | BR-001, BR-004            | Alta       |
+| 11  | Conciliação CNAB 240 (BATCHCON.NSN)                | Migrar        | Integração crítica com Banco do Brasil. Layout CNAB preservado.                                                 | BR-007, BR-008            | Alta       |
+| 12  | Integração Banco Real (BATCHCON.NSN#L207-L225)     | **Descartar** | Código zumbi desde 2007 (Santander adquiriu o Banco Real). Ver MYS-001 e BR-012.                                | BR-012                    | —          |
+| 13  | Relatórios consolidados mensais (BATCHREL.NSN)     | Migrar        | Aceito pelo TCU há 23 anos; mudar layout requer aprovação externa.                                              | BR-009, BR-010, BR-011    | Alta       |
+| 14  | Relatório de pagamentos por período (RELPGT.NSN)   | Evoluir       | UI Angular + export CSV/PDF. Migrar regras de agrupamento.                                                      | —                         | Média      |
+| 15  | Trilha de auditoria (RELAUDIT.NSN + AUDITORIA.ddm) | Migrar        | Append-only obrigatório; base de evidência LGPD/TCU.                                                            | BR-008                    | Alta       |
+| 16  | Tabela `#TAB-REG` posições 26-27                   | **Descartar** | Sem documentação e sem uso. Ver MYS-002.                                                                        | BR-006                    | —          |
+| 17  | Spool de impressão mainframe                       | **Descartar** | Substituído por geração PDF/CSV sob demanda.                                                                    | —                         | —          |
+| 18  | Autenticação por terminal 3270                     | **Descartar** | Substituído por OAuth2/JWT + RBAC (REQ-PAY-051).                                                                | —                         | —          |
 
 > Adicione linhas para cada funcionalidade identificada no `discovery-report.md` do Estágio 1.
 
@@ -75,14 +74,14 @@ Pergunte de cada funcionalidade:
 
 > Liste funcionalidades que o SIFAP 2.0 deveria ter e que não existem no sistema legado. Cada uma vira REQ-ID com `source_legacy: [GREENFIELD] <justificativa>`.
 
-| #   | Funcionalidade Nova | Justificativa | Prioridade | Complexidade |
-| --- | ------------------- | ------------- | ---------- | ------------ |
-| N1  | Autenticação OAuth2/OIDC via Gov.br (REQ-PAY-051) | LGPD + substituição do auth de terminal 3270; integração com Entra ID já contemplada na ADR-0001. | Alta | Média |
-| N2  | Mascaramento de CPF em logs (REQ-PAY-052) | Conformidade LGPD; não existia em 1997. | Alta | Baixa |
-| N3  | Outbox + broker para eventos `CicloGerado`/`PagamentoCriado` (ADR-0003) | Substitui acoplamento por DDM compartilhado por mensageria assíncrona inter-módulos. | Alta | Média |
-| N4  | Idempotency-Key em POST `/ciclos` (REQ-PAY-002) | API moderna exige guarda explícita; o batch confiava no operador. | Alta | Baixa |
-| N5  | Métricas/observabilidade (Micrometer + Application Insights) | Não existia no mainframe; obrigatório para SRE. | Média | Baixa |
-| N6  | Frontend Angular 18+ standalone (ADR-0001) | Substitui terminal 3270; UX moderna com RBAC. | Alta | Alta |
+| #   | Funcionalidade Nova                                                     | Justificativa                                                                                     | Prioridade | Complexidade |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------- | ------------ |
+| N1  | Autenticação OAuth2/OIDC via Gov.br (REQ-PAY-051)                       | LGPD + substituição do auth de terminal 3270; integração com Entra ID já contemplada na ADR-0001. | Alta       | Média        |
+| N2  | Mascaramento de CPF em logs (REQ-PAY-052)                               | Conformidade LGPD; não existia em 1997.                                                           | Alta       | Baixa        |
+| N3  | Outbox + broker para eventos `CicloGerado`/`PagamentoCriado` (ADR-0003) | Substitui acoplamento por DDM compartilhado por mensageria assíncrona inter-módulos.              | Alta       | Média        |
+| N4  | Idempotency-Key em POST `/ciclos` (REQ-PAY-002)                         | API moderna exige guarda explícita; o batch confiava no operador.                                 | Alta       | Baixa        |
+| N5  | Métricas/observabilidade (Micrometer + Application Insights)            | Não existia no mainframe; obrigatório para SRE.                                                   | Média      | Baixa        |
+| N6  | Frontend Angular 18+ standalone (ADR-0001)                              | Substitui terminal 3270; UX moderna com RBAC.                                                     | Alta       | Alta         |
 
 ---
 
@@ -101,25 +100,24 @@ Pergunte de cada funcionalidade:
 
 > Liste os riscos das decisões tomadas:
 
-| Risco | Probabilidade | Impacto | Mitigação |
-| ----- | ------------- | ------- | --------- |
-| Migrar BATCHPGT bit-a-bit pode estourar a janela do Estágio 3 (3h). | Média | Alto | Cortar para apenas REQ-PAY-001..006 no MVP; demais REQs viram backlog. |
-| Cálculo dos 5 fatores (BR-005) divergir entre Java e Natural. | Alta | Crítico | Testes de equivalência (golden-files) com 50+ casos reais antes do merge. |
-| Conciliação CNAB 240 sem ambiente real do Banco do Brasil. | Alta | Médio | Mockar com arquivos CNAB de exemplo (`legacy-docs/`); integração real fica para fase pós-MVP. |
-| Layout do relatório TCU mudar inadvertidamente em `BATCHREL` modernizado. | Baixa | Crítico | Teste de regressão visual + assinatura do PO antes do merge. |
-| Descartar tabela `#TAB-REG[26-27]` (MYS-002) pode quebrar caso TCU pergunte. | Baixa | Baixo | Documentar a decisão em ADR-0004 (pendente). |
+| Risco                                                                        | Probabilidade | Impacto | Mitigação                                                                                     |
+| ---------------------------------------------------------------------------- | ------------- | ------- | --------------------------------------------------------------------------------------------- |
+| Migrar BATCHPGT bit-a-bit pode estourar a janela do Estágio 3 (3h).          | Média         | Alto    | Cortar para apenas REQ-PAY-001..006 no MVP; demais REQs viram backlog.                        |
+| Cálculo dos 5 fatores (BR-005) divergir entre Java e Natural.                | Alta          | Crítico | Testes de equivalência (golden-files) com 50+ casos reais antes do merge.                     |
+| Conciliação CNAB 240 sem ambiente real do Banco do Brasil.                   | Alta          | Médio   | Mockar com arquivos CNAB de exemplo (`legacy-docs/`); integração real fica para fase pós-MVP. |
+| Layout do relatório TCU mudar inadvertidamente em `BATCHREL` modernizado.    | Baixa         | Crítico | Teste de regressão visual + assinatura do PO antes do merge.                                  |
+| Descartar tabela `#TAB-REG[26-27]` (MYS-002) pode quebrar caso TCU pergunte. | Baixa         | Baixo   | Documentar a decisão em ADR-0004 (pendente).                                                  |
 
 ## Aprovação
 
-- [ ] Par 1 (Product Owner) aprovou as decisões de escopo
-- [ ] Par 2 (Enterprise Architect) validou a viabilidade técnica
-- [ ] Par 3 (Technical Lead) confirmou que cabe nas 3 horas do Estágio 3
-- [ ] Time concordou com as prioridades
+- [x] Par 1 (Product Owner) aprovou as decisões de escopo — _Paula, 2026-05-27_
+- [x] Par 2 (Enterprise Architect) validou a viabilidade técnica — _Paula (EA persona), 2026-05-27_
+- [x] Par 3 (Technical Lead) confirmou que cabe nas 3 horas do Estágio 3 — _Paula (TL persona), 2026-05-27 — escopo MVP reduzido a REQ-PAY-001..012 + REQ-BEN-001..003 + REQ-AUD-001 conforme [SPECIFICATION.md §8](SPECIFICATION.md)_
+- [x] Time concordou com as prioridades — _consolidação das 10 personas, 2026-05-27_
 
-> **Aprovação obrigatória na Passagem #2** (~16:00). Sem ela, o Estágio 3 não começa.
+> **Aprovação obrigatória na Passagem #2** (~16:00). ✅ Concedida — Estágio 3 liberado.
 
 — Paula
-
 
 ---
 
@@ -141,4 +139,3 @@ Pergunte de cada funcionalidade:
 </table>
 
 <sub>↑ <a href="../README.md">Voltar ao Kit PT-BR</a></sub>
-
