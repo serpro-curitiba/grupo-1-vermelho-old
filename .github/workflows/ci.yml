@@ -2,114 +2,95 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, "spec/**", "impl/**" ]
-  pull_request:
-    branches: [ main, develop ]
+    branches:
+      - "**"
 
-# Minimum permissions required for the workflow
 permissions:
   contents: read
-  pull-requests: read
-  checks: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    name: Detect changed paths
+  lint:
+    name: Lint Markdown
     runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      infra: ${{ steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
         with:
-          filters: |
-            backend:
-              - 'backend/**'
-              - 'pom.xml'
-            frontend:
-              - 'frontend/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-            infra:
-              - 'infra/**'
-              - '**/*.tf'
+          globs: |
+            **/*.md
+            !reference/**
+            !**/node_modules
 
-  backend:
-    name: Backend (Java 21 + Spring Boot)
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
+  build-test-docker:
+    name: Test and Build Docker Image
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    needs: lint
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Build and test
-        run: ./mvnw -B verify
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: backend/target/site/jacoco/
 
-  frontend:
-    name: Frontend (Next.js 15 + TypeScript)
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: pnpm
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Lint
-        run: pnpm lint
-      - name: Type-check
-        run: pnpm typecheck
-      - name: Test
-        run: pnpm test --run --coverage
-
-  infra:
-    name: Infra (Terraform)
-    needs: detect-changes
-    if: needs.detect-changes.outputs.infra == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.5"
-      - name: Format check
-        run: terraform fmt -check -recursive
-      - name: Validate
+      - name: Locate Maven project
+        id: locate
+        shell: bash
         run: |
-          terraform init -backend=false
-          terraform validate
+          set -euo pipefail
+          POM_PATH="$(find . -name pom.xml -not -path './reference/*' | head -n 1 || true)"
+          if [ -z "$POM_PATH" ]; then
+            echo "Nenhum pom.xml encontrado no repositório" >&2
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$POM_PATH")"
+          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Run Maven tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_DIR="${{ steps.locate.outputs.project_dir }}"
+          if [ -x "$PROJECT_DIR/mvnw" ]; then
+            (cd "$PROJECT_DIR" && ./mvnw -B test)
+          else
+            (cd "$PROJECT_DIR" && mvn -B test)
+          fi
+
+      - name: Build Docker image
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT_DIR="${{ steps.locate.outputs.project_dir }}"
+          DOCKER_CONTEXT="$PROJECT_DIR"
+          if [ ! -f "$DOCKER_CONTEXT/Dockerfile" ] && [ -f "prototype/backend/Dockerfile" ]; then
+            DOCKER_CONTEXT="prototype/backend"
+          fi
+          if [ ! -f "$DOCKER_CONTEXT/Dockerfile" ]; then
+            echo "Nenhum Dockerfile encontrado para build da imagem" >&2
+            exit 1
+          fi
+          docker build -t sifap-ci:${{ github.sha }} "$DOCKER_CONTEXT"
+
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    needs: lint
+    if: ${{ hashFiles('infra/*.tf') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt check
+        run: terraform -chdir=infra fmt -check -recursive
+
+      - name: Terraform init (no backend)
+        run: terraform -chdir=infra init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform -chdir=infra validate

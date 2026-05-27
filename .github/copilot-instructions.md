@@ -82,11 +82,11 @@ flowchart TB
 ## Stack-Alvo
 
 - **Backend:** Java 21 + Spring Boot 3.3 + JPA/Hibernate + PostgreSQL 16
-- **Frontend:** Next.js 15 (App Router) + TypeScript 5 (strict) + Tailwind CSS + shadcn/ui
+- **Frontend:** Angular 18+ (standalone components + signals) + TypeScript 5 (strict) + Angular Material — SSR opcional via Angular Universal. Ver [ADR-0001](../docs/adr/0001-frontend-angular.md).
 - **Containers:** Docker + Docker Compose
 - **IaC:** Terraform (Azure provider ~> 3.x)
 - **CI/CD:** GitHub Actions
-- **Testing:** JUnit 5 + Testcontainers (backend); Vitest + Testing Library (frontend)
+- **Testing:** JUnit 5 + Testcontainers (backend); Jest + Testing Library Angular (frontend)
 
 ## Regras de Geração de Código
 
@@ -99,10 +99,14 @@ flowchart TB
 - Testes unitários são obrigatórios para lógica de negócio
 - Nunca exponha dados sensíveis (CPF, valores de benefício) em logs — mascare-os
 
-### TypeScript / Next.js
-- `strict: true` em `tsconfig.json` — sem exceções
-- Use server actions para mutations; nunca exponha secrets em client components
-- Prefira `async/await` a cadeias `.then()`
+### TypeScript / Angular
+- `strict: true` em `tsconfig.json` — sem exceções, sem `any`
+- **Standalone components** por padrão (sem `NgModule`); use `signals` para state local, RxJS apenas para fluxos assíncronos
+- **Reactive Forms** com `FormBuilder` + validators tipados — nunca template-driven forms em produção
+- Lazy loading por bounded context via `loadComponent`/`loadChildren`
+- Auth via `angular-auth-oidc-client` integrado ao Entra ID — nunca persista tokens em `localStorage` sem cifrar
+- Chamadas HTTP sempre via `HttpClient` com interceptors para JWT, correlação e tratamento de erro
+- Prefira `async/await` ou `firstValueFrom(observable$)` a `.subscribe()` aninhados
 - Somente named exports — sem default exports em arquivos de componentes
 
 ### REST APIs
