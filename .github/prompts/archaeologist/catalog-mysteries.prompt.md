@@ -1,8 +1,8 @@
 ---
 description: "Cataloga perguntas sem resposta encontradas durante a arqueologia — coisas que precisam de uma pessoa para resolver."
 mode: ask
-model: claude-opus-4-7
-tools: ['codebase', 'search']
+model: claude-sonnet-4-20250514
+tools: ['codebase', 'search', 'grep_search']
 ---
 
 # /catalog-mysteries
@@ -17,8 +17,10 @@ Depois que a equipe tiver rodado pelo menos um outro prompt archaeologist (`/ext
 
 ## Pré-condições
 
-- Pelo menos um artefato existe sob `01-arqueologia/` com marcadores `<!-- mystery: ... -->` ou desconhecidos anotados
-- A pasta `01-arqueologia/legado-sifap/` está acessível para sugestões de investigação de follow-up
+- ✅ Pelo menos um artefato existe sob `01-arqueologia/` com marcadores `<!-- mystery: ... -->` ou desconhecidos anotados
+- ✅ A pasta `01-arqueologia/legado-sifap/` está acessível para sugestões de investigação de follow-up
+- ✅ `/extract-business-rules` ou `/map-dependencies` já foi executado pelo menos uma vez
+- ⚠️ Se nenhum artefato com marcadores existir, este prompt aborta — rode antes `/extract-business-rules`
 
 ## Entradas que a Equipe Deve Fornecer
 
@@ -52,6 +54,40 @@ Total de mistérios: N | Bloqueadores: N | Investigação necessária: N | Estac
 ```
 
 Classificações: (a) needs-facilitator — requer input de mentor/especialista, (b) needs-investigation — a resposta provavelmente existe em outro arquivo, (c) parked — fora de escopo para este hackathon, (d) blocks-stage-2 — deve ser resolvido antes de prosseguir.
+
+### Exemplo de Catálogo Preenchido
+
+```markdown
+# Catálogo de Mistérios — Estágio 1
+**Equipe:** Grupo 1 Vermelho | **Data:** 27/05/2026
+
+## Resumo
+Total: 8 | Bloqueadores: 2 | Investigação: 3 | Facilitador: 2 | Estacionados: 1
+
+## Mistérios
+| ID | Descrição | Fonte | Classificação | Severidade | Ação sugerida |
+|--------|-------------------------------------------------|----------------------------------|--------------------|------------|------------------------------------------------|
+| MYS-001| Significado do código de status `S` em BENEFIC  | natural-programs/BATCHPGT.NSN:42 | blocks-stage-2     | Critical   | Perguntar a facilitador — sem referência no DDM|
+| MYS-002| Magic number `1850` em cálculo de teto          | natural-programs/CALCBEN.NSN:87  | blocks-stage-2     | Critical   | Buscar `1850` em todos arquivos                |
+| MYS-003| CALLNAT 'VALCPF' não encontrado na pasta        | natural-programs/CADBEN.NSN:120  | needs-investigation| High       | Verificar `legacy-docs/` ou pedir programa     |
+| MYS-004| Variável #W-OLD-FMT não atribuída em lugar nenhum| natural-programs/RELPGT.NSN:33  | needs-investigation| High       | grep `#W-OLD-FMT` em todos .NSN                |
+| MYS-005| Termo "COMPLEMENTO BPC" não documentado          | business-rules-catalog.md        | needs-facilitator  | Medium     | Perguntar significado de negócio               |
+| MYS-006| Diferença entre `PGTO` e `LIQU` em fluxo        | dependency-map.md                | needs-facilitator  | Medium     | Confirmar com mentor                           |
+| MYS-007| HTML demo usa termo "SIFAP-PLUS" desconhecido    | demo/sifap-terminal.html         | needs-investigation| High       | Buscar "SIFAP-PLUS" em legacy-docs             |
+| MYS-008| Comentário 'TODO: refactor 1998' em código legado| natural-programs/CONSPGT.NSN:5  | parked             | Low        | Ignorar — dívida técnica do legado              |
+```
+
+## Tratamento de Erros
+
+**Se não houver marcadores `<!-- mystery: ... -->`:**
+- Reporte: "Nenhum mistério encontrado. Confirme que `/extract-business-rules` foi rodado e marcou incógnitas."
+- Não crie um catálogo vazio — aborte com sugestão.
+
+**Se um mistério aparecer em formato ambíguo (sem contexto):**
+- Inclua-o no catálogo com classificação `needs-investigation` e ação "Reabrir arquivo-fonte para contexto".
+
+**Se o escopo solicitado não existir:**
+- Aborte com: "Escopo `[path]` não encontrado em `01-arqueologia/`."
 
 ## Definição de Pronto
 
@@ -107,6 +143,16 @@ Forneça os resultados da busca como caminho de investigação sugerido. Não in
 Gere a saída em `01-arqueologia/mysteries-found.md`, ordenada por severidade (Critical primeiro, Low por último). Inclua as contagens de resumo no topo.
 
 Você não deve tentar resolver mistérios por adivinhação. Se um mistério não tiver resposta baseada em evidências, ele continua sendo mistério. Isso é um entregável válido e importante.
+
+## Próximos Passos
+
+Após gerar o catálogo:
+1. **Críticos (`blocks-stage-2`)** — trazer para o próximo check-in com facilitador imediatamente
+2. **High (`needs-investigation`)** — abrir issue por mistério e atribuir a um membro do par
+3. **Medium (`needs-facilitator`)** — consolidar em uma única pergunta para a facilitação
+4. **Low (`parked`)** — mover para `01-arqueologia/parked-questions.md` (criar se necessário)
+5. Invocar `/discovery-report` para consolidar tudo no relatório final do Estágio 1
+6. Bloqueadores resolvidos viram regras de negócio em `business-rules-catalog.md` no Estágio 2
 
 ## Exemplo de Invocação
 

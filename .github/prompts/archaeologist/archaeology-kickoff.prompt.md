@@ -1,8 +1,8 @@
 ---
 description: "Inicia o Estágio 1 — orienta a equipe sobre a pasta de legado e produz um inventário inicial."
 mode: ask
-model: claude-opus-4-7
-tools: ['codebase', 'search', 'findFiles']
+model: claude-sonnet-4-20250514
+tools: ['codebase', 'search', 'findFiles', 'grep_search']
 ---
 
 # /archaeology-kickoff
@@ -17,8 +17,10 @@ Logo no início do Estágio 1, imediatamente depois que a equipe recebe acesso �
 
 ## Pré-condições
 
-- A pasta `01-arqueologia/legado-sifap/` está disponível no workspace (com symlink criado por `11-scripts/setup.sh` ou posicionada manualmente)
-- A equipe ainda não abriu programas individuais
+- ✅ A pasta `01-arqueologia/legado-sifap/` está disponível no workspace (com symlink criado por `11-scripts/setup.sh` ou posicionada manualmente)
+- ✅ A equipe **ainda não invocou** `/extract-business-rules` ou `/map-dependencies`
+- ✅ `00-SETUP.md` foi completado (symlink criado)
+- ⚠️ Se alguma pré-condição falhar, este prompt aborta — redirecione para `/setup-verify`
 
 ## Entradas que a Equipe Deve Fornecer
 
@@ -46,12 +48,76 @@ Um arquivo Markdown em `01-arqueologia/inventory.md` com:
 
 ```markdown
 # Inventário Legado — [Nome da Equipe]
+**Data:** [data] | **Status:** Primeira Passada
+
 ## Estrutura de Pastas
 ## Contagem de Arquivos por Tipo
 ## Padrões de Convenção de Nomes
 ## Itens Incomuns (Top 3)
 ## Ordem de Leitura Proposta
 ```
+
+### Exemplo de Inventário Preenchido
+
+```markdown
+# Inventário Legado — Grupo 1 Vermelho
+**Data:** 27/05/2026 | **Status:** Primeira Passada
+
+## Estrutura de Pastas
+01-arqueologia/legado-sifap/
+├── natural-programs/   (15 arquivos .NSN)
+├── adabas-ddms/        (4 arquivos .ddm)
+├── legacy-docs/        (7 arquivos .md)
+└── demo/               (2 arquivos HTML)
+
+## Contagem de Arquivos por Tipo
+| Extensão | Contagem | Finalidade provável |
+|----------|----------|---------------------|
+| .nsn     | 15       | Programas Natural   |
+| .ddm     | 4        | Estruturas Adabas   |
+| .md      | 7        | Documentação        |
+| .html    | 2        | Demos legadas       |
+
+## Padrões de Convenção de Nomes
+| Prefixo | Contagem | Hipótese                       |
+|---------|----------|--------------------------------|
+| CAD     | 3        | Cadastro (entry points online) |
+| BATCH   | 3        | Lotes em batch                 |
+| CALC    | 3        | Cálculos                       |
+| VAL     | 3        | Validações                     |
+| CONS    | 1        | Consultas (read-only)          |
+| REL     | 2        | Relatórios                     |
+
+## Itens Incomuns (Top 3)
+1. **BATCHPGT.NSN** — maior arquivo do lote (4.2KB) com prefixo BATCH
+   → Ação: provável entry point de batch — priorize leitura
+2. **legacy-docs/SIFAP-Historia.md** — único .md em pasta legada
+   → Ação: pode conter contexto histórico — leia antes dos programas
+3. **demo/sifap-terminal.html** — único HTML, aninhamento profundo
+   → Ação: pode ser UI legada — use para entender fluxos de usuário
+
+## Ordem de Leitura Proposta
+1. legacy-docs/SIFAP-Historia.md — contexto histórico primeiro
+2. adabas-ddms/*.ddm — entender dados antes do código (4 arquivos)
+3. BATCH*.NSN — entry points batch
+4. CAD*.NSN — cadastros (lógica de entrada)
+5. CALC*.NSN — cálculos (core business logic)
+6. VAL*.NSN — validações
+7. CONS*.NSN + REL*.NSN — consultas e relatórios (após core)
+```
+
+## Tratamento de Erros
+
+**Se a pasta estiver vazia ou inacessível:**
+- Reporte: "Pasta não encontrada em `[path]`. Sugerindo validar com `find` (bash) ou `Get-ChildItem` (PowerShell)."
+- Não falhe — gere inventário vazio com sugestão de ação.
+
+**Se houver arquivos com extensões desconhecidas:**
+- Liste-os com `Extensão desconhecida — investigar manualmente`.
+- Não adivinhe a finalidade.
+
+**Se o symlink/pasta de setup estiver faltando:**
+- Aborte com: "Pasta `01-arqueologia/legado-sifap/` não encontrada. Rode `11-scripts/setup.sh` antes."
 
 ## Definição de Pronto
 
@@ -86,6 +152,15 @@ Com base nos padrões identificados, proponha quais arquivos ler primeiro. Prior
 Escreva o inventário completo em `01-arqueologia/inventory.md` seguindo o formato de saída acima. Inclua a data, um placeholder para nome da equipe e uma nota de que esta é a primeira passada — a ser revisada conforme a equipe lê arquivos individuais.
 
 Não abra nenhum arquivo para ler seu conteúdo. Este prompt opera somente sobre nomes de arquivos e estrutura de pastas. Se a equipe pedir para você ler um arquivo específico, redirecione para `/extract-business-rules` ou `/map-dependencies`.
+
+## Próximos Passos
+
+Após este inventário:
+1. Cada par escolhe seus 3 programas conforme `01-arqueologia/LEGACY-EXPLORATION-CHECKLIST.md`
+2. Invocar `/extract-business-rules` para cada programa atribuído
+3. Invocar `/map-dependencies` para mapear cadeias CALLNAT
+4. Invocar `/catalog-mysteries` para registrar perguntas em aberto
+5. Consolidar tudo em `01-arqueologia/discovery-report.md` via `/discovery-report`
 
 ## Exemplo de Invocação
 

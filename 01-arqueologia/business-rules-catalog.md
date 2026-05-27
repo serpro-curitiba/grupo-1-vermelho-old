@@ -46,21 +46,21 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 | ID     | Regra de Negócio | Programa Fonte | Campos DDM | Nível de Risco | Notas |
 | ------ | ---------------- | -------------- | ---------- | -------------- | ----- |
-| BR-001 |                  |                |            |                |       |
-| BR-002 |                  |                |            |                |       |
-| BR-003 |                  |                |            |                |       |
-| BR-004 |                  |                |            |                |       |
-| BR-005 |                  |                |            |                |       |
-| BR-006 |                  |                |            |                |       |
-| BR-007 |                  |                |            |                |       |
-| BR-008 |                  |                |            |                |       |
-| BR-009 |                  |                |            |                |       |
-| BR-010 |                  |                |            |                |       |
-| BR-011 |                  |                |            |                |       |
-| BR-012 |                  |                |            |                |       |
-| BR-013 |                  |                |            |                |       |
-| BR-014 |                  |                |            |                |       |
-| BR-015 |                  |                |            |                |       |
+| BR-001 | Operação de beneficiário deve ser I (Inclusão) ou A (Alteração) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L119-L124 | #OPER | CRÍTICO | Validação de entrada obrigatória |
+| BR-002 | CPF é obrigatório para qualquer operação | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L126-L131 | CPF | CRÍTICO | Chave única do beneficiário |
+| BR-003 | CPF deve ser válido conforme algoritmo módulo-11 com 2 dígitos verificadores | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L267-L318 | CPF | CRÍTICO | Algoritmo específico do SIFAP |
+| BR-004 | Nome é obrigatório | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L133-L138 | NOME | CRÍTICO | Identificação do beneficiário |
+| BR-005 | Data de nascimento é obrigatória (formato AAAAMMDD) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L140-L145 | DT-NASCIMENTO | CRÍTICO | Base para cálculo de elegibilidade |
+| BR-006 | Sexo deve ser M (Masculino) ou F (Feminino) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L147-L152 | SEXO | CRÍTICO | Validação de domínio |
+| BR-007 | Em INCLUSÃO (I): beneficiário não deve existir previamente | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L154-L164 | CPF | CRÍTICO | Impede duplicação; rejeita com erro |
+| BR-008 | Em ALTERAÇÃO (A): beneficiário deve existir na base | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L166-L171 | CPF | CRÍTICO | Impede alteração de registro fantasma |
+| BR-009 | Cálculo da idade: (ano-atual - ano-nascimento), com verificação de mês/dia | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L173-L177 | DT-NASCIMENTO, #IDADE | MÉDIO | Usado para determinação de status |
+| BR-010 | Status inicial padrão para novo beneficiário é 'A' (Ativo) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L179-L182 | STATUS | MÉDIO | Transição de estado ao incluir |
+| BR-011 | Beneficiários com idade > 75 anos recebem status 'S' (Suspenso) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L184-L187 | #IDADE, STATUS | ALTO | **Regra com limite sem justificação desde 2011** |
+| BR-012 | Em INCLUSÃO: DT-CADASTRO e DT-ATUALIZACAO recebem data do sistema (#DT-HOJE) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L194-L208 | DT-CADASTRO, DT-ATUALIZACAO | MÉDIO | Auditoria de mudanças |
+| BR-013 | Em ALTERAÇÃO: CPF, DT-NASCIMENTO, SEXO, DT-CADASTRO são imutáveis (read-only) | 01-arqueologia/legado-sifap/natural-programs/CADBENEF.NSN#L210-L228 | CPF, DT-NASCIMENTO, SEXO | ALTO | Garante integridade histórica |
+| BR-014 | Máximo de 5 dependentes por beneficiário titular | 01-arqueologia/legado-sifap/natural-programs/CADDEPEND.NSN#L65-L68 | NUM-DEPENDENTES | CRÍTICO | Limite de elegibilidade para dependentes |
+| BR-015 | Cálculo de valor base de programa ajustado: VLR-CALC = VLR-BASE * (1.00 + FATOR-REAJ * 0.347215) | 01-arqueologia/legado-sifap/natural-programs/CADPROG.NSN#L81-L82 | VLR-BASE, FATOR-REAJ, VLR-CALC | CRÍTICO | Constante mágica 0.347215 sem comentário explicativo |
 
 > Adicione mais linhas conforme necessário. Lembre-se: existem **10 regras escondidas** no código!
 

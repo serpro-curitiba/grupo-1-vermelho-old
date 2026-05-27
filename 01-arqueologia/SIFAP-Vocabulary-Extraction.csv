@@ -1,0 +1,45 @@
+Termo,Expansão,Programas,Contexto,Domínio
+CPF,Cadastro de Pessoas Físicas,CADBENEF; CADDEPEND,Identificador único de 11 dígitos do beneficiário,Identificação
+NIS,Número de Inscrição Social,CADBENEF,Número de inscrição no sistema social brasileiro,Identificação
+RG,Registro Geral,CADBENEF,Documento de identidade complementar,Identificação
+DOC-DEP,Documento Dependente,CADDEPEND,Documento de identidade do dependente,Identificação
+CPF-DEP,CPF do Dependente,CADDEPEND,CPF do dependente vinculado,Identificação
+BENEFICIARIO,Beneficiário,CADBENEF; CADDEPEND,Pessoa física inscrita em programa social,Entidade Principal
+DEPENDENTES,Dependentes,CADDEPEND,Grupo de pessoas vinculadas ao beneficiário titular,Relacionamento
+BENEF-TITULAR,Beneficiário Titular,CADDEPEND,Beneficiário principal que vincula dependentes,Relacionamento
+PARENTESCO,Parentesco,CADDEPEND,"Relação familiar: FI(Filho), CO(Cônjuge), IR(Irmão), OU(Outro)",Relacionamento
+NOME,Nome,CADBENEF; CADDEPEND,Nome completo da pessoa física,Dados Pessoais
+NOME-DEP,Nome Dependente,CADDEPEND,Nome completo do dependente,Dados Pessoais
+DT-NASCIMENTO,Data de Nascimento,CADBENEF,Data de nascimento do beneficiário (AAAAMMDD),Dados Pessoais
+DT-NASC-DEP,Data de Nascimento Dependente,CADDEPEND,Data de nascimento do dependente (AAAAMMDD),Dados Pessoais
+SEXO,Sexo,CADBENEF; CADDEPEND,"Sexo da pessoa (M=Masculino, F=Feminino)",Dados Pessoais
+SEXO-DEP,Sexo Dependente,CADDEPEND,"Sexo do dependente (M=Masculino, F=Feminino)",Dados Pessoais
+IDADE,Idade,CADBENEF,Idade calculada em anos (usado para critérios de elegibilidade),Dados Pessoais
+ENDERECO,Endereço,CADBENEF,Endereço residencial completo,Localização
+MUNICIPIO,Município,CADBENEF,Cidade de residência,Localização
+UF,Unidade Federativa,CADBENEF,Estado brasileiro (sigla de 2 caracteres),Localização
+CEP,Código de Endereçamento Postal,CADBENEF,Código postal brasileiro (8 dígitos),Localização
+COD-REGIAO,Código da Região,CADBENEF,Código geográfico-administrativo da região,Localização
+TELEFONE,Telefone,CADBENEF,Telefone de contato do beneficiário,Contato
+RENDA-FAMILIAR,Renda Familiar,CADBENEF,Renda total mensal do núcleo familiar (valores monetários),Dados Socioeconômicos
+NUM-DEPENDENTES,Número de Dependentes,CADBENEF; CADDEPEND,Quantidade de dependentes vinculados (máximo 5 em Adabas PE),Dados Socioeconômicos
+PROGRAMA-SOCIAL,Programa Social,CADPROG,Programa de benefícios governamental,Entidade Principal
+COD-PROGRAMA,Código do Programa,CADBENEF; CADPROG,Código numérico único do programa (N4),Programa
+NOME-PROGRAMA,Nome do Programa,CADPROG,Nome descritivo do programa social,Programa
+TIPO,Tipo de Programa,CADPROG,"Classificação: A(Assistencial), P(Previdenciário), T(Trabalho)",Programa
+VLR-BASE,Valor Base,CADPROG,Valor mensal base do benefício antes de ajustes (N9.2),Programa
+FATOR-REAJUSTE,Fator de Reajuste,CADPROG,Índice percentual de ajuste do valor (N3.4) para inflação,Programa
+FATOR-K,Fator de Correção,CADPROG,"Fator multiplicador calculado: 1.00 + (FATOR-REAJUSTE × 0.347215)",Programa
+RENDA-MAX,Renda Máxima,CADPROG,Limite máximo de renda familiar para elegibilidade (N9.2),Programa
+IDADE-MIN,Idade Mínima,CADPROG,Limite mínimo de idade para elegibilidade (N3),Programa
+IDADE-MAX,Idade Máxima,CADPROG,Limite máximo de idade para elegibilidade (N3),Programa
+COD-ELEGIBILIDADE,Código de Elegibilidade,CADPROG,"Código que define critérios de acesso ao programa (A5, ex: 00001)",Programa
+STATUS,Status do Beneficiário,CADBENEF; CADDEPEND,"Estado: A(Ativo), S(Idoso/Especial >75 anos), C(Cancelado), D(Desligado)",Status
+STATUS-PROG,Status do Programa,CADPROG,"Status: A(Ativo), I(Inativo)",Status
+DT-CADASTRO,Data de Cadastro,CADBENEF,Data de inclusão inicial no sistema (AAAAMMDD),Auditoria
+DT-ATUALIZACAO,Data de Atualização,CADBENEF,Data da última alteração de dados (AAAAMMDD),Auditoria
+DT-INICIO,Data de Início,CADPROG,Data de início de vigência do programa (AAAAMMDD),Auditoria
+DT-FIM,Data de Término,CADPROG,"Data final do programa (AAAAMMDD, 0=indeterminado)",Auditoria
+OPERACAO,Operação,CADBENEF,"Tipo de transação: I(Inclusão), A(Alteração)",Transação
+VLR-CALC,Valor Calculado,CADPROG,Valor base ajustado com fator K (VLR-BASE × FATOR-K),Cálculo
+ENCONTRO,Encontro (Found),CADBENEF; CADDEPEND,"Flag lógico: TRUE se registro encontrado, FALSE caso contrário",Lógica
