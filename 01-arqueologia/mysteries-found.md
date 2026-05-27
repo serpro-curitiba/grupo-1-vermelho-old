@@ -44,11 +44,11 @@
 
 | ID      | Descrição | Onde Encontrado | Impacto Potencial | Confiança |
 | ------- | --------- | --------------- | ----------------- | --------- |
-| MYS-001 |           |                 |                   |           |
-| MYS-002 |           |                 |                   |           |
-| MYS-003 |           |                 |                   |           |
-| MYS-004 |           |                 |                   |           |
-| MYS-005 |           |                 |                   |           |
+| MYS-001 | Campo FATOR-K existe sem semântica documentada no DDM de programa social | 01-arqueologia/legado-sifap/adabas-ddms/PROGRAMA-SOCIAL.ddm | Cálculo de benefício pode divergir do legado | ALTA |
+| MYS-002 | Campo COD-PROGRAMA em BENEFICIARIO está marcado como PE no remark, mas não há estrutura PE correspondente | 01-arqueologia/legado-sifap/adabas-ddms/BENEFICIARIO.ddm | Modelagem errada de vínculo programa-beneficiário (1:1 vs histórico) | ALTA |
+| MYS-003 | CPF de dependente aceita valor sentinela 00000000000 | 01-arqueologia/legado-sifap/adabas-ddms/BENEFICIARIO.ddm | Integridade de dados e joins por CPF podem quebrar | ALTA |
+| MYS-004 | Programa de relatório legado filtra ações EX da auditoria | 01-arqueologia/legado-sifap/adabas-ddms/AUDITORIA.ddm | Trilha de exclusão pode sumir na migração se reproduzir filtro implícito | ALTA |
+| MYS-005 | Datas numéricas usam 0 para “sem prazo” em alguns campos | 01-arqueologia/legado-sifap/adabas-ddms/BENEFICIARIO.ddm e PAGAMENTO.ddm | Parse de data inválido e perda de semântica no destino | MÉDIA |
 | MYS-006 |           |                 |                   |           |
 | MYS-007 |           |                 |                   |           |
 | MYS-008 |           |                 |                   |           |
@@ -85,10 +85,10 @@
 
 ## Resumo
 
-- Total de mistérios encontrados: \_\_\_
-- Confiança alta: \_\_\_
-- Confiança média: \_\_\_
-- Confiança baixa: \_\_\_
+- Total de mistérios encontrados: 5
+- Confiança alta: 4
+- Confiança média: 1
+- Confiança baixa: 0
 - Easter eggs encontrados: \_\_\_ / 3
 
 ---
