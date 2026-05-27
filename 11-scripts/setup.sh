@@ -46,6 +46,15 @@ need_tool node
 need_tool docker
 need_tool git
 
+if docker info >/dev/null 2>&1; then
+  ok "Docker daemon acessível para o usuário atual"
+else
+  warn "Docker instalado, mas sem acesso ao daemon para o usuário atual"
+  warn "Se aparecer 'permission denied' no /var/run/docker.sock, execute:"
+  warn "  sudo usermod -aG docker \$USER"
+  warn "  newgrp docker   (ou faça logout/login)"
+fi
+
 if command -v gh >/dev/null 2>&1; then
   ok "gh CLI found"
 else
@@ -73,6 +82,9 @@ echo
 echo "Cloning reference materials (read-only)..."
 mkdir -p reference
 
+# Repositório de referência (sobrescreva via env WORKSHOP_REPO se necessário)
+WORKSHOP_REPO="${WORKSHOP_REPO:-https://github.com/serpro-curitiba/grupo-1-vermelho-old.git}"
+
 clone_or_pull() {
   local url="$1" dest="$2"
   if [ -d "$dest/.git" ]; then
@@ -83,18 +95,34 @@ clone_or_pull() {
   fi
 }
 
-# Adjust these URLs to your fork or org
-WORKSHOP_REPO="${WORKSHOP_REPO:-https://github.com/paulasilvatech/workshop-datacorp.git}"
-
 if [ ! -d "reference/workshop-datacorp" ]; then
   clone_or_pull "$WORKSHOP_REPO" "reference/workshop-datacorp"
 fi
 
-# Symlink the parts teams need most.
-# 01-arqueologia/legado-sifap/ is bundled with the kit (real folder); only link prototype/ and infra/.
-ln -sfn "../reference/workshop-datacorp/04-prototipo-sifap-moderno" prototype 2>/dev/null || true
-ln -sfn "../reference/workshop-datacorp/05-terraform-azure" infra 2>/dev/null || true
-ok "Linked prototype/, infra/ (01-arqueologia/legado-sifap/ already bundled in kit)"
+# Symlink prototype/ e infra/ se existirem na referência
+PROTOTYPE_SOURCE="${PROTOTYPE_SOURCE:-reference/workshop-datacorp/04-prototipo-sifap-moderno}"
+INFRA_SOURCE="${INFRA_SOURCE:-reference/workshop-datacorp/05-terraform-azure}"
+
+if [ -d "$PROTOTYPE_SOURCE" ]; then
+  ln -sfn "$PROTOTYPE_SOURCE" prototype
+  ok "Linked prototype/ -> $PROTOTYPE_SOURCE"
+else
+  warn "Prototype não encontrado em '$PROTOTYPE_SOURCE'"
+  warn "Defina PROTOTYPE_SOURCE com o caminho correto antes de subir o docker compose"
+fi
+
+if [ -d "$INFRA_SOURCE" ]; then
+  ln -sfn "$INFRA_SOURCE" infra
+  ok "Linked infra/ -> $INFRA_SOURCE"
+else
+  warn "Infra não encontrada em '$INFRA_SOURCE'"
+  warn "Defina INFRA_SOURCE com o caminho correto se precisar dos módulos Terraform"
+fi
+
+if [ ! -d "prototype/backend" ] || [ ! -d "prototype/frontend" ]; then
+  warn "Estrutura esperada para Docker Compose ausente: prototype/backend e/ou prototype/frontend"
+  warn "Sem isso, 'docker compose up -d --wait' não conseguirá buildar backend/frontend"
+fi
 
 # 3. Initialize specs/ for Spec-Kit
 echo
