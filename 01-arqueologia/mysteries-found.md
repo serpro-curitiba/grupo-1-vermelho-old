@@ -44,8 +44,8 @@
 
 | ID      | Descrição | Onde Encontrado | Impacto Potencial | Confiança |
 | ------- | --------- | --------------- | ----------------- | --------- |
-| MYS-001 |           |                 |                   |           |
-| MYS-002 |           |                 |                   |           |
+| MYS-001 | Código zumbi: integração Banco Real (descontinuada em 2007) comentada em vez de removida | `BATCHCON.NSN#L207-L225` | Confusão durante migração; falso positivo de integração multi-banco | ALTA |
+| MYS-002 | Tabela `#TAB-REG` declarada com 27 posições mas só 25 regiões documentadas | `BATCHPGT.NSN#L130-L151` | Posições 26-27 com fator 1.0000 nunca usadas; possível resíduo de plano de expansão | MÉDIA |
 | MYS-003 |           |                 |                   |           |
 | MYS-004 |           |                 |                   |           |
 | MYS-005 |           |                 |                   |           |
@@ -57,19 +57,48 @@
 
 ## Detalhamento dos Mistérios
 
-### MYS-001: [Título do Mistério]
+### MYS-001: Código zumbi — integração Banco Real descontinuada (2007)
 
-- **Arquivo**: `01-arqueologia/legado-sifap/natural-programs/ARQUIVO.NSN#L<inicio>-L<fim>`
+- **Arquivo**: `01-arqueologia/legado-sifap/natural-programs/BATCHCON.NSN#L207-L225`
 - **Trecho de código**:
 
 ```natural
-* Cole aqui o trecho relevante
+* --------------------------------------------------------
+* INTEGRACAO BANCO REAL - DESCONTINUADA
+* BANCO REAL FOI ADQUIRIDO PELO SANTANDER EM 2007
+* MANTER CODIGO PARA REFERENCIA HISTORICA
+* RESPONSAVEL: MARCOS RIBEIRO - 18/09/2005
+* --------------------------------------------------------
+*  DEFINE WORK FILE 2 'RETORNO_REAL.DAT' TYPE 'ASCII'
+*  READ WORK FILE 2 #REG-CNAB
+*    MOVE SUBSTR(#REG-CNAB,1,3) TO #CNAB-BANCO
+*    IF #CNAB-BANCO NE '356'   /* COD BANCO REAL */
+*      ESCAPE TOP
+*    END-IF
+*    /* LAYOUT BANCO REAL DIFERENTE DO BB */
+*    PERFORM CONCILIA-REAL
+*  END-WORK
 ```
 
-- **O que esperávamos**: [comportamento esperado]
-- **O que o código faz**: [comportamento real]
-- **Hipótese do time**: [melhor palpite]
-- **Risco se ignorarmos**: [o que pode dar errado na migração]
+- **O que esperávamos**: conciliação CNAB apenas com Banco do Brasil (CNAB 240), conforme cabeçalho do programa (L10) e ADR original de 1997.
+- **O que o código faz**: mantém um bloco inteiro comentado referenciando o código bancário `356` (Banco Real) com layout CNAB diferente. O comentário admite que o banco foi adquirido pelo Santander em 2007 e o código permanece "para referência histórica".
+- **Hipótese do time**: migração para Santander nunca foi finalizada; o autor optou por comentar o bloco em vez de remover. Há também uma subrotina `CONCILIA-REAL` (não encontrada no fonte atual) referenciada — possível resíduo de copybook removido.
+- **Risco se ignorarmos**: (1) ao reescrever a conciliação no SIFAP 2.0, alguém pode interpretar o código zumbi como requisito de integração multi-banco; (2) se houver auditoria sobre integrações ativas, isso aparece como falso positivo; (3) sinaliza débito técnico de processo — código morto persistido por 18+ anos.
+- **Confiança**: **ALTA**
+
+---
+
+### MYS-002: Tabela `#TAB-REG` com 27 posições, mas só 25 regiões documentadas
+
+- **Arquivo**: `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L130-L151`
+- **Sintoma**: Array `#TAB-REG` declarado com 27 elementos. Os `MOVE`s subsequentes preenchem posições 1-25 com fatores regionais distintos (0.95 a 1.10). Posições 26 e 27 ficam com valor default `1.0000` e não são referenciadas em nenhum lugar do programa, nem em BATCHCON, nem em BATCHREL.
+- **Hipóteses do time**:
+  1. Reserva para estados/regiões criados após 1988 (Tocantins, ou novas regiões administrativas) que nunca foram cadastrados.
+  2. Provisão para "região especial" (Brasília? exterior?) que ficou abandonada após reestruturação organizacional.
+  3. Easter egg / erro de declaração nunca corrigido pelo autor original.
+- **Impacto se ignorarmos**: BAIXO — basta migrar como tabela de 25 entradas. Mas convém registrar a decisão de remover as posições 26-27 caso o TCU questione em auditoria.
+- **Investigação sugerida**: procurar `01-arqueologia/legado-sifap/legacy-docs/` por menção a "região 26"/"região 27"; entrevistar autor original (Carlos Roberto da Silva, autor desde 1997).
+- **Confiança**: **MÉDIA**
 
 ---
 

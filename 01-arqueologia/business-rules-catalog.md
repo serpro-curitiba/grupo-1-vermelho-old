@@ -44,20 +44,22 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 ## Regras Encontradas
 
+> Contribuição Par 2 (EA + SA) — BRs extraídas dos 3 batches: BATCHPGT, BATCHCON, BATCHREL. Demais pares acrescentam a partir da BR-013.
+
 | ID     | Regra de Negócio | Programa Fonte | Campos DDM | Nível de Risco | Notas |
 | ------ | ---------------- | -------------- | ---------- | -------------- | ----- |
-| BR-001 |                  |                |            |                |       |
-| BR-002 |                  |                |            |                |       |
-| BR-003 |                  |                |            |                |       |
-| BR-004 |                  |                |            |                |       |
-| BR-005 |                  |                |            |                |       |
-| BR-006 |                  |                |            |                |       |
-| BR-007 |                  |                |            |                |       |
-| BR-008 |                  |                |            |                |       |
-| BR-009 |                  |                |            |                |       |
-| BR-010 |                  |                |            |                |       |
-| BR-011 |                  |                |            |                |       |
-| BR-012 |                  |                |            |                |       |
+| BR-001 | Pagamento só é gerado para beneficiário com `STATUS = 'A'`. Demais (S/C/I/D) incrementam `#QTD-IGNORADOS`. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L196-L200` | `BENEFICIARIO.STATUS` | ALTO | A=Ativo, S=Suspenso, C=Cancelado, I=Inativo, D=Óbito. |
+| BR-002 | Mesmo CPF lido em sequência é deduplicado em memória via `#CPF-ANT`. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L188-L195` | `BENEFICIARIO.CPF` | CRÍTICO | Defesa contra duplicação no Adabas legado. |
+| BR-003 | Idempotência por competência: se já existe PAGAMENTO para o CPF na `COMPETENCIA`, pula. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L201-L213` | `PAGAMENTO.CPF-BENEF`, `PAGAMENTO.COMPETENCIA` | CRÍTICO | Base da REQ-PAY-002 moderna. |
+| BR-004 | Cálculo só ocorre se PROGRAMA-SOCIAL existe E está com `STATUS-PROG='A'`. Inexistente → erro; inativo → ignorado silencioso. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L215-L235` | `BENEFICIARIO.COD-PROGRAMA`, `PROGRAMA-SOCIAL.STATUS-PROG` | ALTO | Tratamento divergente para métricas. |
+| BR-005 | `vlrBruto = vlrBase × fatorRegional × fatorFamiliar × fatorRenda × fatorIdade × fatorReajuste`. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L277-L278` | `PAGAMENTO.VLR-BRUTO`, `PROGRAMA-SOCIAL.VLR-BASE` | CRÍTICO | Par 3 detalha cada fator. |
+| BR-006 | `#TAB-REG` tem 27 posições mas só 25 regiões documentadas; posições 26-27 = 1.0000 sem justificativa. | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN#L130-L151` | `BENEFICIARIO.COD-REGIAO` | MÉDIO | Ver MYS-002. |
+| BR-007 | Conciliação CNAB processa **somente** banco 001 (Banco do Brasil). Outros bancos descartados sem log. | `01-arqueologia/legado-sifap/natural-programs/BATCHCON.NSN#L100-L135` | `PAGAMENTO.NUM-PAGTO`, `PAGAMENTO.STATUS-PGTO` | ALTO | SIFAP é single-bank hoje. |
+| BR-008 | Toda atualização via conciliação gera AUDITORIA (`PG-CONFIRMADO`/`PG-DEVOLVIDO`). | `01-arqueologia/legado-sifap/natural-programs/BATCHCON.NSN#L170-L205` | `PAGAMENTO.STATUS-PGTO`, `AUDITORIA.*` | CRÍTICO | Base da REQ-PAY-052. |
+| BR-009 | Relatório agrupa 25 regiões em 5 macro-regiões: 1-5=N, 6-10=NE, 11-15=SE, 16-20=S, 21-25=CO. | `01-arqueologia/legado-sifap/natural-programs/BATCHREL.NSN#L117-L133` | `BENEFICIARIO.COD-REGIAO` | MÉDIO | Mapeamento hardcoded ≠ IBGE oficial. |
+| BR-010 | Arredondamento half-up manual: `(valor+0.005)×100 → trunc → /100`. Não usa banker's rounding. | `01-arqueologia/legado-sifap/natural-programs/BATCHREL.NSN#L137-L139` | `PAGAMENTO.VLR-BRUTO` | ALTO | Java deve usar `RoundingMode.HALF_UP` p/ testes de equivalência. |
+| BR-011 | `BATCHREL` filtra pela `COMPETENCIA` recebida via JCL; demais ignoradas. | `01-arqueologia/legado-sifap/natural-programs/BATCHREL.NSN#L105-L108` | `PAGAMENTO.COMPETENCIA` | BAIXO | Filtro trivial em SQL moderno. |
+| BR-012 | Código zumbi de integração Banco Real (comprado pelo Santander em 2008) permanece comentado. **Não portar.** | `01-arqueologia/legado-sifap/natural-programs/BATCHCON.NSN#L207-L225` | — | BAIXO | Ver MYS-001. |
 | BR-013 |                  |                |            |                |       |
 | BR-014 |                  |                |            |                |       |
 | BR-015 |                  |                |            |                |       |
@@ -88,12 +90,30 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 <!-- Liste aqui regras com prazos, datas-limite, períodos -->
 
+## Fichas por programa
+
+### Par 2 · Arquitetura (BATCHPGT, BATCHCON, BATCHREL)
+
+| Campo | BATCHPGT.NSN | BATCHCON.NSN | BATCHREL.NSN |
+| --- | --- | --- | --- |
+| Autor original | Carlos Roberto da Silva | Marcos Antonio Ribeiro | Patricia Gomes de Souza |
+| Data inicial | 22/06/1997 | 05/03/2000 | 10/11/1999 |
+| Última alteração | 10/07/2015 (Anderson Lima — INC AUDITORIA) | 30/01/2014 (Anderson Lima — INC AUDITORIA) | 14/02/2013 (Anderson Lima — AJUSTE FORMATO) |
+| Inputs (DDMs lidos) | BENEFICIARIO, PROGRAMA-SOCIAL, PAGAMENTO | PAGAMENTO, AUDITORIA, WORK FILE 1 (CNAB BB) | PAGAMENTO, BENEFICIARIO |
+| Outputs (DDMs escritos) | PAGAMENTO (STORE) | PAGAMENTO (UPDATE), AUDITORIA (STORE) | — (spool de impressão) |
+| CALLNAT (chamadas externas) | **0** — header menciona "CHAMA CALCBENF E CALCDSCT", mas é comentário falso. Reuso só por `PERFORM` interno. | **0** — `PERFORM GRAVA-AUDITORIA-CONC` interno. | **0** — sem subrotinas relevantes. |
+| BRs extraídas | BR-001 · BR-002 · BR-003 · BR-004 · BR-005 · BR-006 | BR-007 · BR-008 · BR-012 | BR-009 · BR-010 · BR-011 |
+| Mistérios | MYS-002 | MYS-001 | — |
+| Sistemas externos | SIAFI (TXT empenho), Banco do Brasil (CNAB remessa) | Banco do Brasil (CNAB 240 retorno) | — |
+
+> **Achado transversal Par 2:** nenhum dos 3 programas usa `CALLNAT`. O acoplamento entre programas se dá exclusivamente via DDMs compartilhados (BENEFICIARIO, PROGRAMA-SOCIAL, PAGAMENTO, AUDITORIA). Confirmado por varredura completa dos 15 `.NSN`.
+
 ## Resumo Estatístico
 
-- Total de regras encontradas: \_\_\_
-- Regras críticas: \_\_\_
-- Regras com duplicação: \_\_\_
-- Regras sem documentação (escondidas): \_\_\_
+- Total de regras encontradas: **12** (Par 2 contribuiu BR-001..BR-012; pares 1/3/4/5 acrescentam a partir da BR-013)
+- Regras críticas: **5** (BR-002, BR-003, BR-005, BR-008, e BR-007 indireto)
+- Regras com duplicação: 0
+- Regras sem documentação prévia (escondidas no código): **12**
 
 ---
 
