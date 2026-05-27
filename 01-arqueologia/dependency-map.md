@@ -22,52 +22,111 @@
 
 ## Como descobrir dependências
 
-- Use `grep` ou Copilot Chat para listar todas as ocorrências de `CALLNAT` nos 15 arquivos `.NSN`.
-- Prompt útil: _"Liste todas as ocorrências de CALLNAT nestes arquivos e desenhe um diagrama Mermaid."_
-- Para leitura/escrita em DDMs: procure por `READ`, `READ LOGICAL`, `STORE`, `UPDATE`, `DELETE`.
+- **Aviso (achado do Par 2 · 27-mai):** os 15 programas SIFAP **não usam `CALLNAT`**. Todo reuso é feito por `PERFORM` de subrotinas internas. **O acoplamento entre programas vem dos DDMs compartilhados.**
+- Para leitura/escrita em DDMs: procure por `READ`, `READ LOGICAL`, `STORE`, `UPDATE`, `DELETE`, `FIND`.
+- Para integrações externas: procure por `WORK FILE`, `CNAB`, `SIAFI`, `BANCO`, `RECEITA`.
 
-## Diagrama de Dependências entre Programas
+Comandos PowerShell úteis:
 
-> Substitua o exemplo abaixo pelo mapa real do seu time. **Meta:** cobrir todos os 15 programas, sem órfãos.
+```powershell
+# DDMs lidos/escritos por programa
+Select-String -Path "01-arqueologia\legado-sifap\natural-programs\*.NSN" -Pattern "READ|STORE|UPDATE|FIND"
 
-```mermaid
-flowchart TD
- subgraph "Programas Online"
- CADBENF["CADBENF.NSN<br/>Cadastro de Beneficiários"]
- CONBENF["CONBENF.NSN<br/>Consulta de Beneficiários"]
- REGPGTO["REGPGTO.NSN<br/>Registro de Pagamentos"]
- end
-
- subgraph "Programas Batch"
- BATCHPGT["BATCHPGT.NSN<br/>Processamento em Lote"]
- end
-
- subgraph "Subprogramas"
- CALCBENF["CALCBENF.NSN<br/>Cálculo de Benefícios"]
- VALCPF["VALCPF.NSN<br/>Validação de CPF"]
- end
-
- subgraph "DDMs Adabas"
- DDM_BENEF[("DDM: BENEFICIARIO")]
- DDM_PGTO[("DDM: PAGAMENTO")]
- end
-
- CADBENF -->|CALLNAT| VALCPF
- CADBENF -->|CALLNAT| CALCBENF
- CADBENF -->|READ/STORE| DDM_BENEF
-
- REGPGTO -->|CALLNAT| CALCBENF
- REGPGTO -->|READ/STORE| DDM_PGTO
-
- CONBENF -->|READ| DDM_BENEF
-
- BATCHPGT -->|CALLNAT| CALCBENF
- BATCHPGT -->|READ/UPDATE| DDM_PGTO
- BATCHPGT -->|READ| DDM_BENEF
+# Sistemas externos referenciados
+Select-String -Path "01-arqueologia\legado-sifap\**" -Pattern "SIAFI|RECEITA|BANCO|CADUNICO|SERPRO|DATAPREV"
 ```
 
-> **Instrução:** este é apenas um exemplo inicial com 6 programas.
-> Seu time deve mapear **todos os 15 programas** e os **4 DDMs**.
+## Diagrama de Dependências — Programa ↔ DDM
+
+> Como não há `CALLNAT`, o diagrama foca em **quem lê e quem escreve em cada DDM**. O acoplamento real do legado está nos 4 DDMs compartilhados.
+
+```mermaid
+flowchart LR
+    subgraph "DDMs Adabas"
+        BENEF[("BENEFICIARIO")]
+        PGTO[("PAGAMENTO")]
+        PROG[("PROGRAMA-SOCIAL")]
+        AUDIT[("AUDITORIA")]
+    end
+
+    subgraph "Cadastro"
+        CADBENEF["CADBENEF.NSN"]
+        CADDEPEND["CADDEPEND.NSN"]
+        CADPROG["CADPROG.NSN"]
+    end
+
+    subgraph "Validação"
+        VALBENEF["VALBENEF.NSN"]
+        VALDOCS["VALDOCS.NSN"]
+        VALELEG["VALELEG.NSN"]
+    end
+
+    subgraph "Cálculo"
+        CALCBENF["CALCBENF.NSN"]
+        CALCCORR["CALCCORR.NSN"]
+        CALCDSCT["CALCDSCT.NSN"]
+    end
+
+    subgraph "Batch"
+        BATCHPGT["BATCHPGT.NSN<br/>gera pagamentos"]
+        BATCHCON["BATCHCON.NSN<br/>concilia CNAB ↔ BB"]
+        BATCHREL["BATCHREL.NSN<br/>relatório batch"]
+    end
+
+    subgraph "Consulta / Relatórios"
+        CONSBENF["CONSBENF.NSN"]
+        RELPGT["RELPGT.NSN"]
+        RELAUDIT["RELAUDIT.NSN"]
+    end
+
+    subgraph "Externos"
+        BB[("Banco do Brasil<br/>CNAB 240")]
+        SIAFI[("SIAFI<br/>arquivo TXT")]
+        RECEITA[("Receita Federal<br/>terminal 3270")]
+    end
+
+    CADBENEF -->|R/W| BENEF
+    CADDEPEND -->|R/W| BENEF
+    CADPROG -->|R/W| PROG
+
+    VALBENEF -->|R| BENEF
+    VALDOCS -->|R| BENEF
+    VALDOCS -.consulta CPF.-> RECEITA
+    VALELEG -->|R| BENEF
+    VALELEG -->|R| PROG
+
+    CALCBENF -->|R| BENEF
+    CALCBENF -->|R| PROG
+    CALCCORR -->|R| PGTO
+    CALCDSCT -->|R| PGTO
+
+    BATCHPGT -->|R| BENEF
+    BATCHPGT -->|R| PROG
+    BATCHPGT -->|W| PGTO
+    BATCHPGT -.remessa CNAB.-> BB
+    BATCHPGT -.empenho TXT.-> SIAFI
+
+    BATCHCON -->|R/W| PGTO
+    BATCHCON -->|W| AUDIT
+    BATCHCON <-.retorno CNAB.- BB
+
+    BATCHREL -->|R| PGTO
+    BATCHREL -->|R| BENEF
+
+    CONSBENF -->|R| BENEF
+    RELPGT -->|R| PGTO
+    RELAUDIT -->|R| AUDIT
+```
+
+> **Bounded contexts candidatos** (rascunho Par 2, validação no Estágio 2):
+>
+> 1. `beneficiarios` — CADBENEF, CADDEPEND, CONSBENF (aggregate: BENEFICIARIO)
+> 2. `programas` — CADPROG (aggregate: PROGRAMA-SOCIAL)
+> 3. `fiscalizacao` — VALBENEF, VALDOCS, VALELEG
+> 4. `pagamentos` — CALCBENF, CALCCORR, CALCDSCT, BATCHPGT (aggregate: PAGAMENTO)
+> 5. `conciliacao` — BATCHCON (acopla PAGAMENTO + AUDITORIA + BB/SIAFI)
+> 6. `auditoria` — RELAUDIT + escritas de BATCHCON (aggregate: AUDITORIA)
+> 7. `relatorios` — BATCHREL, RELPGT (view-only, candidato a módulo de leitura)
 
 ## Diagrama de Fluxo de Dados (DDMs)
 
@@ -101,35 +160,39 @@ flowchart LR
 
 ## Tabela de Dependências
 
-| Programa     | Chama (CALLNAT) | Lê (READ) DDMs | Escreve (STORE/UPDATE) DDMs | Observações |
-| ------------ | --------------- | -------------- | --------------------------- | ----------- |
-| CADBENF.NSN  |                 |                |                             |             |
-| CONBENF.NSN  |                 |                |                             |             |
-| REGPGTO.NSN  |                 |                |                             |             |
-| BATCHPGT.NSN |                 |                |                             |             |
-| CALCBENF.NSN |                 |                |                             |             |
-| VALCPF.NSN   |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
-|              |                 |                |                             |             |
+> Coluna "Chama (CALLNAT)" fica vazia para todos: nenhum programa SIFAP usa `CALLNAT`. Marcamos `— (não usa)` para deixar explicito.
+
+| Programa | Chama (CALLNAT) | Lê (READ/FIND) DDMs | Escreve (STORE/UPDATE) DDMs | Observações |
+| --- | --- | --- | --- | --- |
+| CADBENEF.NSN | — (não usa) | BENEFICIARIO | BENEFICIARIO | Cadastro online; chama subrotina interna `VALIDA-CPF` |
+| CADDEPEND.NSN | — | BENEFICIARIO | BENEFICIARIO | Dependentes como grupo periódico (PE) |
+| CADPROG.NSN | — | PROGRAMA-SOCIAL | PROGRAMA-SOCIAL | Cadastro de programas (Bolsa Família, BPC, …) |
+| VALBENEF.NSN | — | BENEFICIARIO | — | Valida CPF/data/nome via `PERFORM` interno |
+| VALDOCS.NSN | — | BENEFICIARIO | — | Consulta Receita por terminal 3270 (timeout 30s) |
+| VALELEG.NSN | — | BENEFICIARIO, PROGRAMA-SOCIAL | — | Regras de elegibilidade específicas por programa |
+| CALCBENF.NSN | — | BENEFICIARIO, PROGRAMA-SOCIAL | — | Determina faixa de renda + base do benefício |
+| CALCCORR.NSN | — | PAGAMENTO | — | Índice acumulado de correção |
+| CALCDSCT.NSN | — | PAGAMENTO | — | Contribuição social e descontos |
+| CONSBENF.NSN | — | BENEFICIARIO | — | Tela 3270 de consulta; mascaramento de CPF |
+| BATCHPGT.NSN | — | BENEFICIARIO, PROGRAMA-SOCIAL, PAGAMENTO | PAGAMENTO | Gera ciclo mensal · emite remessa CNAB · envia TXT SIAFI |
+| BATCHCON.NSN | — | PAGAMENTO, AUDITORIA, WORK FILE 1 (CNAB BB) | PAGAMENTO, AUDITORIA | Reconcilia retorno bancário; código zumbi Banco Real (ver `mysteries-found.md` MYS-001) |
+| BATCHREL.NSN | — | PAGAMENTO, BENEFICIARIO | — | Relatório batch impresso (sem persistência) |
+| RELPGT.NSN | — | PAGAMENTO | — | Relatório analitico de pagamentos |
+| RELAUDIT.NSN | — | AUDITORIA | — | Relatório de eventos de auditoria |
 
 ## Dependências Circulares
 
 > Liste aqui qualquer dependência circular encontrada (programa A chama B que chama A):
 
-- Nenhuma encontrada até agora.
+- Nenhuma. Como não existe `CALLNAT`, não há ciclos de invocação.
+- **Acoplamento por DDM:** BATCHCON e BATCHPGT escrevem ambos em PAGAMENTO (risco de concorrência / regra de ordem batch). Documentar em ADR.
 
 ## Programas Órfãos
 
 > Programas que não são chamados por nenhum outro (possíveis pontos de entrada ou código morto):
 
-- A investigar.
+- **Todos os 15 são "pontos de entrada"** (online via tela 3270 ou jobs batch agendados) — confirmado pela ausência de `CALLNAT`.
+- Código morto detectado: bloco `Banco Real` em `BATCHCON.NSN` L207-L220 (ver `mysteries-found.md` MYS-001).
 
 ---
 

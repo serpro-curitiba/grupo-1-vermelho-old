@@ -43,25 +43,25 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 ## Regras Encontradas
 
-| ID           | Regra de Negócio                                                                                                         | Programa Fonte                                                                               | Campos DDM                                                             | Nível de Risco | Notas                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
-| BR-BEN-001   | Cálculo do valor bruto: VLR-BRUTO = VLR-BASE × FATOR-REGIONAL × FATOR-FAMILIAR × FATOR-RENDA                             | `01-arqueologia/legado-sifap/natural-programs/CALCBENF.NSN#L130-L200`                        | ARQ-150 (BENEFICIARIO), ARQ-155 (PROGRAMA-SOCIAL), ARQ-160 (PAGAMENTO) | CRÍTICO        | Regra financeira central. VLR-BASE vem de ARQ-155, fatores estão em tabelas internas |
-| BR-BEN-002   | Fator regional tem 27 valores (1 para cada região/UF), variando de 1.0 a 1.4                                             | `01-arqueologia/legado-sifap/natural-programs/CALCBENF.NSN#L130-L157`                        | ARQ-150 (COD-REGIAO), ARQ-160 (VLR-BRUTO)                              | CRÍTICO        | Tabela #TAB-REG(1..27) hardcoded no programa. Valores refletem economia regional     |
-| BR-BEN-003   | Fator familiar (progressivo): 1.0 + (NUM-DEPENDENTES × 0.15), máximo 5 dependentes                                       | `01-arqueologia/legado-sifap/natural-programs/CALCBENF.NSN#L160-L180`                        | ARQ-150 (NUM-DEPENDENTES), ARQ-160 (VLR-BRUTO)                         | CRÍTICO        | Limite de 3–5 dependentes é variável (MYS-004: não confirmado em código)             |
-| BR-BEN-004   | Fator de renda (5 faixas): <500=1.2, 500-1000=1.0, 1000-2000=0.9, 2000-3000=0.8, >3000=0.7                               | `01-arqueologia/legado-sifap/natural-programs/CALCBENF.NSN#L165-L185`                        | ARQ-150 (RENDA-FAMILIAR), ARQ-160 (VLR-BRUTO)                          | CRÍTICO        | Faixas estabelecem "foco" em população de baixa renda                                |
-| BR-COR-001   | Correção retroativa usa juros compostos: VLR-CORRIGIDO = VLR-ORIGINAL × ∏(1 + IPCA[mês])                                 | `01-arqueologia/legado-sifap/natural-programs/CALCCORR.NSN#L60-L100`                         | ARQ-160 (VLR-BRUTO, VLR-CORRECAO, DT-CORRECAO)                         | CRÍTICO        | Cálculo de juros compostos preserva poder de compra histórico                        |
-| BR-COR-002   | Tabela IPCA é carregada por ano, índices mensais (2010-2014), valor zero = sem correção                                  | `01-arqueologia/legado-sifap/natural-programs/CALCCORR.NSN#L40-L120`                         | ARQ-160 (VLR-BRUTO)                                                    | CRÍTICO        | MYS-003: tabela obsoleta após 2014; dados posteriores não documentados               |
-| BR-COR-003   | Flag IND-CORRIGIDO previne correção duplicada (idempotência): se 'S', pula cálculo                                       | `01-arqueologia/legado-sifap/natural-programs/CALCCORR.NSN#L150-L170`                        | ARQ-160 (IND-CORRIGIDO, VLR-CORRECAO)                                  | CRÍTICO        | Proteção contra reprocessamento; essencial para auditoria                            |
-| BR-COR-004   | Período de correção é definido por competência mês-a-mês, acumulação no campo VLR-CORRECAO                               | `01-arqueologia/legado-sifap/natural-programs/CALCCORR.NSN#L85-L95`                          | ARQ-160 (COMPETENCIA, VLR-CORRECAO)                                    | ALTO           | Cada mês processado independentemente, depois acumulado                              |
-| BR-DSC-001   | Limite de desconto total é 30% do VLR-BRUTO, EXCETO tipo J (judicial) que não tem limite                                 | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L142-L148`                        | ARQ-150 (DESCONTOS PE), ARQ-160 (VLR-DESCONTO)                         | CRÍTICO        | MYS-005: judicial ilimitado cria risco de "desconto negativo" (aumento)              |
-| BR-DSC-002   | Tipos de desconto: C=Contribuição (3-9%), I=Imposto, J=Judicial (ilimitado), P=Pensão, S=Sindical (1%), A=Administrativo | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L100-L120`                        | ARQ-150 (DESCONTOS.TIPO-DSCT), ARQ-160 (VLR-DESCONTO)                  | CRÍTICO        | 6 tipos de desconto com alíquotas diferentes; S=Sindical é hardcoded 1%              |
-| BR-DSC-003   | Cálculo desconto por alíquota: VLR-DSCT-ITEM = VLR-BRUTO × PCT-DSCT / 100, acumulado em VLR-TOTAL-DSCT                   | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L130-L140`                        | ARQ-150 (DESCONTOS.PCT-DSCT), ARQ-160 (VLR-DESCONTO)                   | ALTO           | Simples multiplicação; limite de 30% valida no final                                 |
-| BR-DSC-004   | Desconto sindical é valor fixo 1% (não parametrizado), aplica sempre que beneficiário é sindicalizado                    | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L145-L150`                        | ARQ-150 (DESCONTOS.TIPO-DSCT=S)                                        | MÉDIO          | MYS-006: hardcoded 1% sem forma de alterar; recomendação: parametrizar em S3         |
-| BR-DSC-005   | Descontos tipo J (judicial) são ilimitados e podem fazer pagamento ficar negativo (regra de negócio não-intuitiva)       | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L142-L148`                        | ARQ-150 (DESCONTOS.TIPO-DSCT=J), ARQ-160 (VLR-LIQUIDO)                 | CRÍTICO        | MYS-005: comportamento perigoso; recomendação: documentar política de negócio        |
-| BR-DSC-006   | Ordem de processamento de descontos afeta resultado se houver limite; MYS-007: ordem ambígua no código                   | `01-arqueologia/legado-sifap/natural-programs/CALCDSCT.NSN#L100-L160`                        | ARQ-150 (DESCONTOS PE), ARQ-160 (VLR-DESCONTO)                         | ALTO           | Loop acumulativo; se ordem mudar, resultado muda. Docs não definem prioridade        |
-| BR-GERAL-001 | Cascata de execução obrigatória: BATCHPGT → CALCBENF → CALCCORR → CALCDSCT → ARQ-160 (resultado final)                   | `01-arqueologia/legado-sifap/natural-programs/BATCHPGT.NSN`                                  | ARQ-160 (PAGAMENTO)                                                    | CRÍTICO        | Fluxo não-alterável; cada etapa depende da anterior                                  |
-| BR-GERAL-002 | Todos os valores monetários são armazenados em formato numérico com 2 casas decimais (N9.2)                              | `01-arqueologia/legado-sifap/natural-programs/CALCBENF.NSN#L1-L50` (definição de DATA LOCAL) | ARQ-160 (VLR-BRUTO, VLR-LIQUIDO, etc.)                                 | MÉDIO          | Convenção de precisão financeira; crítica para auditoria e reconciliação             |
-| BR-GERAL-003 | Beneficiário ativo (STATUS='A') é pré-requisito; beneficiários excluídos (E) e suspensos (S) não recebem pagamento       | `01-arqueologia/legado-sifap/legacy-docs/REGRAS-NEGOCIO-2012.md#RN-002`                      | ARQ-150 (STATUS), ARQ-160 (VLR-LIQUIDO)                                | CRÍTICO        | Validação na entrada de CALCBENF; pula cálculo se não ativo                          |
+> Contribuição Par 2 (EA + SA) — BRs extraídas dos 3 batches: BATCHPGT, BATCHCON, BATCHREL. Demais pares acrescentam a partir da BR-013.
+
+| ID     | Regra de Negócio | Programa Fonte | Campos DDM | Nível de Risco | Notas |
+| ------ | ---------------- | -------------- | ---------- | -------------- | ----- |
+| BR-001 |                  |                |            |                |       |
+| BR-002 |                  |                |            |                |       |
+| BR-003 |                  |                |            |                |       |
+| BR-004 |                  |                |            |                |       |
+| BR-005 |                  |                |            |                |       |
+| BR-006 |                  |                |            |                |       |
+| BR-007 |                  |                |            |                |       |
+| BR-008 |                  |                |            |                |       |
+| BR-009 |                  |                |            |                |       |
+| BR-010 |                  |                |            |                |       |
+| BR-011 |                  |                |            |                |       |
+| BR-012 |                  |                |            |                |       |
+| BR-013 |                  |                |            |                |       |
+| BR-014 |                  |                |            |                |       |
+| BR-015 |                  |                |            |                |       |
 
 > Adicione mais linhas conforme necessário. Lembre-se: existem **10 regras escondidas** no código!
 
@@ -89,12 +89,30 @@ O que NÃO conta: paginação de relatório, formatação de saída, manipulaç�
 
 <!-- Liste aqui regras com prazos, datas-limite, períodos -->
 
+## Fichas por programa
+
+### Par 2 · Arquitetura (BATCHPGT, BATCHCON, BATCHREL)
+
+| Campo | BATCHPGT.NSN | BATCHCON.NSN | BATCHREL.NSN |
+| --- | --- | --- | --- |
+| Autor original | Carlos Roberto da Silva | Marcos Antonio Ribeiro | Patricia Gomes de Souza |
+| Data inicial | 22/06/1997 | 05/03/2000 | 10/11/1999 |
+| Última alteração | 10/07/2015 (Anderson Lima — INC AUDITORIA) | 30/01/2014 (Anderson Lima — INC AUDITORIA) | 14/02/2013 (Anderson Lima — AJUSTE FORMATO) |
+| Inputs (DDMs lidos) | BENEFICIARIO, PROGRAMA-SOCIAL, PAGAMENTO | PAGAMENTO, AUDITORIA, WORK FILE 1 (CNAB BB) | PAGAMENTO, BENEFICIARIO |
+| Outputs (DDMs escritos) | PAGAMENTO (STORE) | PAGAMENTO (UPDATE), AUDITORIA (STORE) | — (spool de impressão) |
+| CALLNAT (chamadas externas) | **0** — header menciona "CHAMA CALCBENF E CALCDSCT", mas é comentário falso. Reuso só por `PERFORM` interno. | **0** — `PERFORM GRAVA-AUDITORIA-CONC` interno. | **0** — sem subrotinas relevantes. |
+| BRs extraídas | BR-001 · BR-002 · BR-003 · BR-004 · BR-005 · BR-006 | BR-007 · BR-008 · BR-012 | BR-009 · BR-010 · BR-011 |
+| Mistérios | MYS-002 | MYS-001 | — |
+| Sistemas externos | SIAFI (TXT empenho), Banco do Brasil (CNAB remessa) | Banco do Brasil (CNAB 240 retorno) | — |
+
+> **Achado transversal Par 2:** nenhum dos 3 programas usa `CALLNAT`. O acoplamento entre programas se dá exclusivamente via DDMs compartilhados (BENEFICIARIO, PROGRAMA-SOCIAL, PAGAMENTO, AUDITORIA). Confirmado por varredura completa dos 15 `.NSN`.
+
 ## Resumo Estatístico
 
-- Total de regras encontradas: \_\_\_
-- Regras críticas: \_\_\_
-- Regras com duplicação: \_\_\_
-- Regras sem documentação (escondidas): \_\_\_
+- Total de regras encontradas: **12** (Par 2 contribuiu BR-001..BR-012; pares 1/3/4/5 acrescentam a partir da BR-013)
+- Regras críticas: **5** (BR-002, BR-003, BR-005, BR-008, e BR-007 indireto)
+- Regras com duplicação: 0
+- Regras sem documentação prévia (escondidas no código): **12**
 
 ---
 

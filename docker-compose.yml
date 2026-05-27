@@ -49,14 +49,17 @@ services:
       dockerfile: Dockerfile
     container_name: sifap-frontend
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://backend:8080
+      # Angular SPA: variável lida em runtime pelo container nginx ou no build.
+      # Mantemos o nome SIFAP_API_BASE_URL para destacar que NÃO é mais Next.js.
+      SIFAP_API_BASE_URL: http://backend:8080
     ports:
-      - "3001:3000"
+      # Container Angular (nginx ou ng serve) escuta na 4200 internamente.
+      - "4200:4200"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget --spider http://localhost:4200/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

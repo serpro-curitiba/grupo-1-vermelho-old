@@ -74,6 +74,40 @@ Prompt útil no Copilot Chat (cole o conteúdo de 2–3 arquivos `.NSN` no chat 
 | 32  | DT-GERACAO    | Data de Geração                      | PAGAMENTO.NSN              | Data que o pagamento foi processado                                      |
 | 33  | DT-CORRECAO   | Data de Correção                     | CALCCORR.NSN               | Data que a correção retroativa foi aplicada                              |
 | 34  | VLR-DIFF      | Valor da Diferença                   | CALCCORR.NSN               | Diferença entre valor original e corrigido (para auditoria)              |
+> Contribuição Par 2 (EA + SA) — termos extraídos dos 3 batches (BATCHPGT, BATCHCON, BATCHREL). Demais pares acrescentam a partir do termo 20.
+
+| #   | Termo | Expansão | Programa | Contexto |
+| --- | ----- | -------- | -------- | -------- |
+| 1   | `BENF` | Beneficiário | `BATCHPGT.NSN`, `BENEFICIARIO.ddm` | Pessoa física receptora do pagamento. Prefixo em variáveis (`#VLR-BENF`, `CPF-BENEF`). |
+| 2   | `PGT` / `PGTO` | Pagamento | `BATCHPGT.NSN`, `BATCHCON.NSN` | Unidade de pagamento mensal. `NUM-PAGTO` é sequencial global. |
+| 3   | `COMPETENCIA` | Mês/ano de referência (AAAAMM) | `BATCHPGT.NSN#L168`, `PAGAMENTO.ddm` | Identifica o ciclo (ex.: 202606). |
+| 4   | `CICLO` | Conjunto de pagamentos de uma COMPETENCIA | `BATCHPGT.NSN` (implícito) | Não existe como entidade no legado; modernizado como aggregate `CicloPagamento`. |
+| 5   | `CNAB 240` | Centro Nacional de Automação Bancária — layout FEBRABAN 240 colunas | `BATCHCON.NSN#L10` | Remessa e retorno do Banco do Brasil. |
+| 6   | `BB` | Banco do Brasil (código 001) | `BATCHCON.NSN` | Único banco integrado em produção. Banco Real (356) descontinuado. |
+| 7   | `SIAFI` | Sist. Integ. Admin. Financeira (Gov. Federal) | `BATCHPGT.NSN`, `legacy-docs/ARQUITETURA-ORIGINAL-1997.md` | Recebe empenhos via TXT batch. Modernizar p/ REST. |
+| 8   | `VLR-BRUTO` | Valor bruto (antes de descontos) | `PAGAMENTO.ddm`, `BATCHPGT.NSN#L277` | Resultado dos 5 fatores. |
+| 9   | `VLR-LIQUIDO` | Valor líquido (bruto − descontos) | `PAGAMENTO.ddm`, `BATCHREL.NSN` | Valor creditado ao beneficiário. |
+| 10  | `STATUS-PGTO` | Status do pagamento (1-5) | `BATCHCON.NSN`, `BATCHREL.NSN#L82-L86` | 1=GERADO, 2=PAGO, 3=CANCELADO, 4=DEVOLVIDO, 5=ESTORNADO. |
+| 11  | `STATUS` (beneficiário) | Status A/S/C/I/D | `BATCHPGT.NSN#L196` | Só `A` recebe pagamento. |
+| 12  | `COD-REGIAO` | Código de região administrativa (1-25) | `BENEFICIARIO.ddm`, `BATCHREL.NSN#L117-L133` | Mapeado em 5 macro-regiões. |
+| 13  | `TAB-REG` | Tabela de fatores regionais | `BATCHPGT.NSN#L130-L151` | 27 posições; 26-27 sem documentação (MYS-002). |
+| 14  | `FATOR-FAM` | Fator familiar (por dependentes) | `BATCHPGT.NSN#L249-L262` | Faixas progressivas. |
+| 15  | `FATOR-IDADE` | Fator etário | `BATCHPGT.NSN#L264-L275` | ≥65→1.15; 60-64→1.10; <18→1.05. |
+| 16  | `AUDITORIA` | Trilha append-only de eventos | `AUDITORIA.ddm`, `BATCHCON.NSN#L170-L205` | Eventos `PG-CONFIRMADO`, `PG-DEVOLVIDO`. |
+| 17  | `CONCILIACAO` | Bater PAGAMENTO emitido vs retorno CNAB | `BATCHCON.NSN` | Processo diário. |
+| 18  | `WORK FILE` | Arquivo sequencial temporário (não-DDM) | `BATCHCON.NSN#L106` | `WORK FILE 1` = retorno CNAB BB. |
+| 19  | `JCL` | Job Control Language (script batch mainframe) | `BATCHREL.NSN` (param `#COMPETENCIA`) | Modernizado p/ scheduler (REQ-PAY-001). |
+| 20  |       |          |          |          |
+| 21  |       |          |          |          |
+| 22  |       |          |          |          |
+| 23  |       |          |          |          |
+| 24  |       |          |          |          |
+| 25  |       |          |          |          |
+| 26  |       |          |          |          |
+| 27  |       |          |          |          |
+| 28  |       |          |          |          |
+| 29  |       |          |          |          |
+| 30  |       |          |          |          |
 
 > Adicione mais linhas conforme necessário. Não se limite a 30!
 

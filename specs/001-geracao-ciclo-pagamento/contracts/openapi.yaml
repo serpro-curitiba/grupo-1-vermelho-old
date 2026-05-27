@@ -1,0 +1,324 @@
+openapi: 3.1.0
+info:
+  title: SIFAP 2.0 — Pagamentos API
+  version: 0.1.0
+  description: |
+    Contrato da feature 001 — Geração de Ciclo de Pagamento Mensal.
+    Bounded context: `pagamentos`. Specs: `specs/001-geracao-ciclo-pagamento/spec.md`.
+  contact:
+    name: Par 2 — Arquitetura
+servers:
+  - url: https://api.sifap.gov.br
+    description: Produção
+  - url: http://localhost:8080
+    description: Local (docker-compose)
+
+tags:
+  - name: ciclos
+    description: Gestão de ciclos de pagamento mensais
+  - name: pagamentos
+    description: Consulta a pagamentos individuais
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/ciclos:
+    post:
+      tags: [ciclos]
+      summary: Gera ciclo de pagamento para uma competência
+      description: |
+        Implementa REQ-PAY-001. Disparo manual por gestor; também invocado pelo scheduler interno.
+        Idempotente por competência (REQ-PAY-002).
+      operationId: gerarCiclo
+      security:
+        - bearerAuth: [GESTOR_PAGAMENTOS]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GerarCicloRequest'
+      responses:
+        '202':
+          description: Ciclo iniciado; processamento assíncrono. Acompanhe via GET `/api/v1/ciclos/{id}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CicloCriadoResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Já existe ciclo ativo para a competência (REQ-PAY-002).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://sifap.gov.br/erros/ciclo-duplicado
+                title: Ciclo duplicado
+                status: 409
+                detail: Já existe ciclo CALCULADO para a competência 202606
+                competencia: '202606'
+                cicloExistenteId: 7f9c2b3a-1d4e-4f5a-9b8c-0e1d2c3b4a5f
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    get:
+      tags: [ciclos]
+      summary: Lista ciclos por filtros
+      operationId: listarCiclos
+      parameters:
+        - in: query
+          name: competencia
+          schema:
+            $ref: '#/components/schemas/Competencia'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/StatusCiclo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CicloResumo'
+
+  /api/v1/ciclos/{cicloId}:
+    get:
+      tags: [ciclos]
+      summary: Detalhe de um ciclo
+      operationId: consultarCiclo
+      parameters:
+        - $ref: '#/components/parameters/CicloId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CicloDetalhe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/pagamentos/{pagamentoId}:
+    get:
+      tags: [pagamentos]
+      summary: Detalhe de um pagamento (com composição do valor)
+      description: Implementa US-003. Inclui todos os fatores aplicados (REQ-PAY-020..024).
+      operationId: consultarPagamento
+      parameters:
+        - in: path
+          name: pagamentoId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagamentoDetalhe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT emitido pelo Entra ID (servidores) ou gov.br (cidadãos).
+        Para esta API, claim `roles` deve conter `GESTOR_PAGAMENTOS` (REQ-PAY-050).
+
+  parameters:
+    CicloId:
+      in: path
+      name: cicloId
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Forbidden:
+      description: Token ausente ou sem o papel requerido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Recurso não encontrado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ValidationError:
+      description: Dado de entrada inválido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Competencia:
+      type: string
+      pattern: '^[0-9]{4}(0[1-9]|1[0-2])$'
+      description: Mês/ano no formato AAAAMM
+      example: '202606'
+
+    StatusCiclo:
+      type: string
+      enum: [INICIADO, CALCULANDO, CALCULADO, EMITIDO, CANCELADO]
+
+    GerarCicloRequest:
+      type: object
+      required: [competencia]
+      properties:
+        competencia:
+          $ref: '#/components/schemas/Competencia'
+        observacao:
+          type: string
+          maxLength: 500
+
+    CicloCriadoResponse:
+      type: object
+      required: [cicloId, status, competencia]
+      properties:
+        cicloId:
+          type: string
+          format: uuid
+        competencia:
+          $ref: '#/components/schemas/Competencia'
+        status:
+          $ref: '#/components/schemas/StatusCiclo'
+        iniciadoEm:
+          type: string
+          format: date-time
+
+    CicloResumo:
+      type: object
+      required: [cicloId, competencia, status, totalPagamentos, totalIgnorados, totalErros]
+      properties:
+        cicloId:
+          type: string
+          format: uuid
+        competencia:
+          $ref: '#/components/schemas/Competencia'
+        status:
+          $ref: '#/components/schemas/StatusCiclo'
+        totalPagamentos:
+          type: integer
+          minimum: 0
+        totalIgnorados:
+          type: integer
+          minimum: 0
+        totalErros:
+          type: integer
+          minimum: 0
+        iniciadoEm:
+          type: string
+          format: date-time
+        concluidoEm:
+          type: string
+          format: date-time
+          nullable: true
+
+    CicloDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/CicloResumo'
+        - type: object
+          properties:
+            requisitanteId:
+              type: string
+              format: uuid
+            observacao:
+              type: string
+
+    ComposicaoValor:
+      type: object
+      description: Detalhamento da fórmula REQ-PAY-020.
+      required: [valorBase, fatorRegional, fatorFamiliar, fatorRenda, fatorIdade, fatorReajuste, valorFinal]
+      properties:
+        valorBase:
+          type: number
+          format: decimal
+          example: 600.00
+        fatorRegional:
+          type: number
+          format: decimal
+          example: 1.0500
+        fatorFamiliar:
+          type: number
+          format: decimal
+          example: 1.1500
+        fatorRenda:
+          type: number
+          format: decimal
+          example: 0.7000
+        fatorIdade:
+          type: number
+          format: decimal
+          example: 1.1000
+        fatorReajuste:
+          type: number
+          format: decimal
+          example: 1.0234
+        valorFinal:
+          type: number
+          format: decimal
+          example: 558.93
+
+    PagamentoDetalhe:
+      type: object
+      required: [pagamentoId, numPagto, cicloId, competencia, cpfMascarado, composicao, calculadoEm]
+      properties:
+        pagamentoId:
+          type: string
+          format: uuid
+        numPagto:
+          type: integer
+          format: int64
+          description: Sequencial monotônico global (REQ-PAY-030)
+        cicloId:
+          type: string
+          format: uuid
+        competencia:
+          $ref: '#/components/schemas/Competencia'
+        cpfMascarado:
+          type: string
+          pattern: '^\*{3}\.\*{3}\.[0-9]{3}-[0-9]{2}$'
+          description: CPF mascarado (REQ-PAY-051)
+          example: '***.***.123-45'
+        beneficiarioId:
+          type: string
+          format: uuid
+        composicao:
+          $ref: '#/components/schemas/ComposicaoValor'
+        calculadoEm:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      description: RFC 7807 problem+json
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+      additionalProperties: true
