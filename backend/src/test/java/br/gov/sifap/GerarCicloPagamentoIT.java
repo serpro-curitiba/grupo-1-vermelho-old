@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GerarCicloPagamentoIT {
 
     @Container
+        @SuppressWarnings("resource")
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("sifap").withUsername("sifap").withPassword("sifap_test");
 

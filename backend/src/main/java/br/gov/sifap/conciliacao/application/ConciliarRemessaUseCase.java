@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ConciliarRemessaUseCase {
+
+    private static final BigDecimal LIMITE_DIVERGENCIA = new BigDecimal("0.01");
 
     private final ArquivoConciliacaoRepository arquivoRepo;
     private final RegistroConciliacaoRepository registroRepo;
@@ -50,51 +51,26 @@ public class ConciliarRemessaUseCase {
         arquivoRepo.save(arquivo);
 
         List<RegistroCnab240> registros = ParserCnab240.ler(new java.io.ByteArrayInputStream(bytes));
-        int conciliados = 0, divergentes = 0, naoEncontrados = 0;
+        int conciliados = 0;
+        int divergentes = 0;
+        int naoEncontrados = 0;
 
         for (RegistroCnab240 r : registros) {
-            PagamentoJpaEntity pgto = null;
-            if (r.numPagto() != null) {
-                pgto = pagamentoRepo.findFirstByNumPagto(r.numPagto()).orElse(null);
+            var processamento = processarRegistro(r, competencia);
+            if (processamento.conciliado()) {
+                conciliados++;
             }
-            if (pgto == null && r.cpf() != null) {
-                pgto = pagamentoRepo.findFirstByCpfAndCompetencia(r.cpf(), competencia).orElse(null);
+            if (processamento.divergente()) {
+                divergentes++;
             }
-
-            String resultado;
-            BigDecimal dif = null;
-            CodigoRetorno cr = CodigoRetorno.doLegado(r.codRetorno());
-
-            if (pgto == null) {
-                resultado = "NAO_ENCONTRADO";
+            if (processamento.naoEncontrado()) {
                 naoEncontrados++;
-            } else {
-                dif = pgto.getVlrLiquido().subtract(r.valorRetorno()).abs();
-                if (dif.compareTo(new BigDecimal("0.01")) > 0) {
-                    resultado = "DIVERGENTE";
-                    divergentes++;
-                } else {
-                    resultado = switch (cr) {
-                        case PAGO       -> "CONCILIADO";
-                        case ESTORNADO  -> "ESTORNO";
-                        case DEVOLVIDO, REJEITADO -> "DIVERGENTE";
-                    };
-                    if ("CONCILIADO".equals(resultado)) conciliados++;
-                    else if ("ESTORNO".equals(resultado)) divergentes++;
-                }
-                // atualiza status do pagamento
-                pgto.setStatus(switch (cr) {
-                    case PAGO       -> StatusPagamento.PAGO.name();
-                    case DEVOLVIDO  -> StatusPagamento.REJEITADO.name();
-                    case ESTORNADO  -> StatusPagamento.CANCELADO.name();
-                    case REJEITADO  -> StatusPagamento.REJEITADO.name();
-                });
             }
 
             registroRepo.save(new RegistroConciliacaoJpaEntity(
                     UUID.randomUUID(), arquivo.getId(), r.cpf(), r.numPagto(),
                     r.valorRetorno(), r.dtPagamento(), r.codRetorno(),
-                    resultado, dif));
+                    processamento.resultado(), processamento.diferenca()));
         }
 
         arquivo.setQtdLidos(registros.size());
@@ -104,6 +80,49 @@ public class ConciliarRemessaUseCase {
 
         return new ResultadoConciliacao(
                 arquivo.getId(), registros.size(), conciliados, divergentes, naoEncontrados);
+    }
+
+    private ProcessamentoRegistro processarRegistro(RegistroCnab240 registro, String competencia) {
+        PagamentoJpaEntity pagamento = localizarPagamento(registro, competencia);
+        if (pagamento == null) {
+            return new ProcessamentoRegistro("NAO_ENCONTRADO", null, false, false, true);
+        }
+
+        CodigoRetorno codigoRetorno = CodigoRetorno.doLegado(registro.codRetorno());
+        BigDecimal diferenca = pagamento.getVlrLiquido().subtract(registro.valorRetorno()).abs();
+
+        atualizarStatusPagamento(pagamento, codigoRetorno);
+
+        if (diferenca.compareTo(LIMITE_DIVERGENCIA) > 0) {
+            return new ProcessamentoRegistro("DIVERGENTE", diferenca, false, true, false);
+        }
+
+        return switch (codigoRetorno) {
+            case PAGO -> new ProcessamentoRegistro("CONCILIADO", diferenca, true, false, false);
+            case ESTORNADO -> new ProcessamentoRegistro("ESTORNO", diferenca, false, true, false);
+            case DEVOLVIDO, REJEITADO -> new ProcessamentoRegistro("DIVERGENTE", diferenca, false, false, false);
+        };
+    }
+
+    private PagamentoJpaEntity localizarPagamento(RegistroCnab240 registro, String competencia) {
+        if (registro.numPagto() != null) {
+            var porNumero = pagamentoRepo.findFirstByNumPagto(registro.numPagto());
+            if (porNumero.isPresent()) {
+                return porNumero.get();
+            }
+        }
+        if (registro.cpf() != null) {
+            return pagamentoRepo.findFirstByCpfAndCompetencia(registro.cpf(), competencia).orElse(null);
+        }
+        return null;
+    }
+
+    private static void atualizarStatusPagamento(PagamentoJpaEntity pagamento, CodigoRetorno codigoRetorno) {
+        pagamento.setStatus(switch (codigoRetorno) {
+            case PAGO -> StatusPagamento.PAGO.name();
+            case DEVOLVIDO, REJEITADO -> StatusPagamento.REJEITADO.name();
+            case ESTORNADO -> StatusPagamento.CANCELADO.name();
+        });
     }
 
     private static String sha256(byte[] b) {
@@ -118,4 +137,11 @@ public class ConciliarRemessaUseCase {
 
     public record ResultadoConciliacao(UUID arquivoId, int qtdLidos, int qtdConciliados,
                                        int qtdDivergentes, int qtdNaoEncontrados) {}
+
+        private record ProcessamentoRegistro(
+            String resultado,
+            BigDecimal diferenca,
+            boolean conciliado,
+            boolean divergente,
+            boolean naoEncontrado) {}
 }

@@ -1,6 +1,7 @@
 package br.gov.sifap.pagamentos.api;
 
 import br.gov.sifap.pagamentos.application.CicloDuplicadoException;
+import br.gov.sifap.pagamentos.application.CicloNaoEncontradoException;
 import br.gov.sifap.pagamentos.application.CompetenciaFuturaException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,14 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setType(URI.create("urn:sifap:erro:competencia.futura"));
         pd.setTitle("Competência futura não permitida");
+        return pd;
+    }
+
+    @ExceptionHandler(CicloNaoEncontradoException.class)
+    public ProblemDetail handleNaoEncontrado(CicloNaoEncontradoException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        pd.setType(URI.create("urn:sifap:erro:ciclo.nao-encontrado"));
+        pd.setTitle("Ciclo não encontrado");
         return pd;
     }
 

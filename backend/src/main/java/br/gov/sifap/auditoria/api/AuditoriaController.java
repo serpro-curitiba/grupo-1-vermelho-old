@@ -26,8 +26,9 @@ public class AuditoriaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime ate,
             @RequestParam(required = false) String acao,
             @RequestParam(required = false) String usuarioId,
-            @RequestParam(required = false) String agregado) {
-        return eventoRepo.filtrar(de, ate, acao, usuarioId, agregado).stream()
+            @RequestParam(required = false) String agregado,
+            @RequestParam(required = false) String agregadoId) {
+        return eventoRepo.filtrar(de, ate, acao, usuarioId, agregado, agregadoId).stream()
                 .map(e -> new EventoResponse(e.getId(), e.getOcorridoEm().toString(),
                         e.getAcao(), e.getTipo(), e.getAgregado(), e.getAgregadoId(),
                         e.getUsuarioId(), e.getIpOrigem(), e.getIdCorrelacao(),

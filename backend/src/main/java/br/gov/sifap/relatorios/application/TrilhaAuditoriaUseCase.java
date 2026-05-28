@@ -22,8 +22,9 @@ public class TrilhaAuditoriaUseCase {
 
     public List<EventoJpaEntity> executar(OffsetDateTime de, OffsetDateTime ate,
                                           String acao, String usuarioId, String agregado,
+                                          String agregadoId,
                                           boolean incluirExclusoes) {
-        var lista = repo.filtrar(de, ate, acao, usuarioId, agregado);
+        var lista = repo.filtrar(de, ate, acao, usuarioId, agregado, agregadoId);
         if (!incluirExclusoes) {
             return lista.stream().filter(e -> !"EX".equals(e.getAcao())).toList();
         }

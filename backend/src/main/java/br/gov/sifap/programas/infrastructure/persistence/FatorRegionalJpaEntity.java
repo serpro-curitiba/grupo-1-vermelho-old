@@ -2,8 +2,6 @@ package br.gov.sifap.programas.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.io.Serializable;
-import java.util.Objects;
 
 @Entity
 @Table(name = "fator_regional", schema = "programas")

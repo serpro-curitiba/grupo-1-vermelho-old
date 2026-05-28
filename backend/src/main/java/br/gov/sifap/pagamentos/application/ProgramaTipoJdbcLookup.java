@@ -12,8 +12,12 @@ public class ProgramaTipoJdbcLookup {
     private EntityManager em;
 
     public String tipo(String programaCodigo) {
-        Object v = em.createNativeQuery("SELECT tipo FROM programas.programa WHERE codigo = ?1")
-                .setParameter(1, programaCodigo).getResultStream().findFirst().orElse(null);
-        return v == null ? "A" : (String) v;
+        var rows = em.createNativeQuery("SELECT tipo FROM programas.programa WHERE codigo = ?1")
+                .setParameter(1, programaCodigo)
+                .getResultList();
+        if (rows.isEmpty() || rows.get(0) == null) {
+            return "A";
+        }
+        return rows.get(0).toString();
     }
 }

@@ -19,6 +19,12 @@ npm start
 
 Abra http://localhost:4200 e gere um ciclo para a competência `202504`.
 
+Após a geração com sucesso, o frontend navega automaticamente para
+`/ciclos/{cicloId}` e exibe o resumo operacional completo do ciclo.
+
+A tela de resumo também consulta `/api/v1/auditoria/eventos?agregadoId={cicloId}`
+e mostra os eventos de auditoria com filtro textual por ID, tipo, ação e usuário.
+
 ## Build de produção
 
 ```powershell

@@ -39,7 +39,10 @@ public class CadastrarBeneficiarioUseCase {
         // VALBENEF — CPF + nome + UF + data
         Cpf cpfVo = Cpf.de(cmd.cpf());
         ValidadorBeneficiario.validarNome(cmd.nome());
-        ValidadorBeneficiario.validarUf(cmd.uf());
+        ValidadorBeneficiario.validarUf(cmd.rgUf());
+        if (cmd.endereco() != null) {
+            ValidadorBeneficiario.validarUf(cmd.endereco().uf());
+        }
         ValidadorBeneficiario.validarDataNascimento(cmd.dtNascimento());
 
         // CADBENEF — não permite CPF duplicado

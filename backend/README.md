@@ -37,6 +37,23 @@ Respostas:
 - `409 Conflict` — ciclo já existe para a competência (REQ-PAY-002)
 - `422 Unprocessable Entity` — competência futura (REQ-PAY-003) ou formato inválido
 
+## Endpoint de escopo ampliado
+
+```http
+GET /api/v1/ciclos/{cicloId}/resumo
+```
+
+Retorna o resumo operacional e financeiro consolidado do ciclo (totais processados,
+gerados, rejeitados, ignorados, valor total, bruto, descontos, líquido, abono e 13º).
+
+## Auditoria por ciclo
+
+```http
+GET /api/v1/auditoria/eventos?agregadoId={cicloId}
+```
+
+Consulta os eventos de auditoria relacionados ao ciclo informado.
+
 ## Rastreabilidade
 
 Cada classe-chave referencia o REQ-ID em comentários:

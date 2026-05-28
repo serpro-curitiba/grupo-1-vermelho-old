@@ -34,18 +34,18 @@ public class RelatorioConsolidadoUseCase {
     }
 
     public List<LinhaConsolidada> executar(String competencia) {
-        // Carrega num_regiao do beneficiário para classificar
+        // Carrega regiao do beneficiário para classificar
         String sql = """
                 SELECT
-                  b.num_regiao        AS regiao,
+              b.regiao            AS regiao,
                   p.status            AS status,
                   COUNT(*)            AS qtd,
                   COALESCE(SUM(p.vlr_liquido), 0) AS total
                 FROM pagamentos.pagamento p
                 JOIN beneficiarios.beneficiario b ON b.id = p.beneficiario_id
                 WHERE p.competencia = ?
-                GROUP BY b.num_regiao, p.status
-                ORDER BY b.num_regiao, p.status
+            GROUP BY b.regiao, p.status
+            ORDER BY b.regiao, p.status
                 """;
         var bruto = jdbc.queryForList(sql, competencia);
         var agrup = new java.util.LinkedHashMap<String, java.util.Map<String, Acumulador>>();
@@ -84,7 +84,8 @@ public class RelatorioConsolidadoUseCase {
     }
 
     private static class Acumulador {
-        int qtd; BigDecimal total = BigDecimal.ZERO;
+        int qtd;
+        BigDecimal total = BigDecimal.ZERO;
         void acumular(int q, BigDecimal t) { qtd += q; total = total.add(t); }
     }
 

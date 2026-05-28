@@ -11,16 +11,18 @@ public interface EventoRepository extends JpaRepository<EventoJpaEntity, UUID> {
 
     @Query("""
             SELECT e FROM EventoJpaEntity e
-            WHERE (:de IS NULL OR e.ocorridoEm >= :de)
-              AND (:ate IS NULL OR e.ocorridoEm <= :ate)
-              AND (:acao IS NULL OR e.acao = :acao)
-              AND (:usuarioId IS NULL OR e.usuarioId = :usuarioId)
-              AND (:agregado IS NULL OR e.agregado = :agregado)
+            WHERE e.ocorridoEm >= COALESCE(:de, e.ocorridoEm)
+              AND e.ocorridoEm <= COALESCE(:ate, e.ocorridoEm)
+              AND e.acao = COALESCE(:acao, e.acao)
+              AND e.usuarioId = COALESCE(:usuarioId, e.usuarioId)
+              AND e.agregado = COALESCE(:agregado, e.agregado)
+              AND e.agregadoId = COALESCE(:agregadoId, e.agregadoId)
             ORDER BY e.ocorridoEm DESC
             """)
     List<EventoJpaEntity> filtrar(@Param("de") OffsetDateTime de,
                                   @Param("ate") OffsetDateTime ate,
                                   @Param("acao") String acao,
                                   @Param("usuarioId") String usuarioId,
-                                  @Param("agregado") String agregado);
+                                  @Param("agregado") String agregado,
+                                  @Param("agregadoId") String agregadoId);
 }

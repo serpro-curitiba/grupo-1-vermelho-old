@@ -1,8 +1,12 @@
 <!-- markdownlint-disable MD013 MD025 MD026 MD028 MD029 MD034 MD040 MD051 MD060 -->
 
-# ADR-005: Estrategia de Deploy e Infraestrutura como Codigo
+# ADR-005: Estratégia de Deploy e Infraestrutura como Código
 
-![ESTAGIO 02 Spec](https://img.shields.io/badge/ESTAGIO-02%20Spec-00A4EF?style=for-the-badge) ![TIPO ADR](https://img.shields.io/badge/TIPO-ADR-1A1A1A?style=for-the-badge)
+![ESTÁGIO 02 Spec](https://img.shields.io/badge/ESTÁGIO-02%20Spec-00A4EF?style=for-the-badge) ![TIPO ADR](https://img.shields.io/badge/TIPO-ADR-1A1A1A?style=for-the-badge) ![STATUS Aceita](https://img.shields.io/badge/STATUS-Aceita-7FBA00?style=for-the-badge)
+
+> 🗺 **Você está aqui:** [Kit PT-BR](../README.md) → [Estágio 2](README.md) → **ADR-005**
+
+> 📘 Esta ADR registra a decisão operacional do Stage 2 sobre ambiente local, CI e draft de infraestrutura como código. Ela orienta a implementação do Stage 3 e a evolução do Stage 4.
 
 **Data**: 27/05/2026
 **Status**: Aceita
@@ -10,69 +14,93 @@
 
 ## Contexto
 
-No Estagio 2 precisamos definir um caminho de deploy reproduzivel para o SIFAP 2.0, com baixo custo de operacao no workshop e transicao segura para o Estagio 3.
+No Estágio 2 precisamos definir um caminho de deploy reproduzível para o SIFAP 2.0, com baixo custo de operação no workshop e transição segura para o Estágio 3.
 
-Requisitos e restricoes:
+Restrições e requisitos principais:
 
-- O time precisa subir ambiente local com Docker Compose de forma previsivel.
-- O pipeline deve validar qualidade minima (lint, test e build de imagem).
-- A topologia alvo em nuvem deve ser descrita por Terraform, mesmo sem aplicar no dia.
-- O fluxo deve evitar segredos em codigo e permitir evolucao para CI/CD continuo.
+- O time precisa subir ambiente local com Docker Compose de forma previsível.
+- O pipeline deve validar qualidade mínima com lint, testes e build de imagem.
+- A topologia alvo em nuvem deve ser descrita por Terraform, mesmo sem aplicar no workshop.
+- O fluxo deve evitar segredos versionados e permitir evolução para CI/CD contínuo.
 
-## Opcoes Consideradas
+## Opções Consideradas
 
-### Opcao 1: Deploy manual sem IaC
+### Opção 1: Deploy manual sem IaC
 
-- **Descricao**: configurar recursos e publicar aplicacao manualmente.
-- **Vantagens**: inicio rapido para demo local.
-- **Desvantagens**: baixo controle, pouca repetibilidade, alto risco operacional.
+- **Descrição**: configurar recursos e publicar a aplicação manualmente.
+- **Vantagens**: início rápido para demo local.
+- **Desvantagens**: baixo controle, pouca repetibilidade e alto risco operacional.
 
-### Opcao 2: Docker Compose local + CI basico + Terraform draft
+### Opção 2: Docker Compose local + CI básico + Terraform draft
 
-- **Descricao**: padronizar execucao local com compose, validar via GitHub Actions e manter Terraform em modo draft para topologia alvo.
-- **Vantagens**: equilibrio entre velocidade e governanca; reduz divergencia entre maquinas; prepara migracao para cloud.
-- **Desvantagens**: ainda sem deploy automatico em nuvem no workshop.
+- **Descrição**: padronizar a execução local com Compose, validar via GitHub Actions e manter Terraform em modo draft para a topologia alvo.
+- **Vantagens**: equilíbrio entre velocidade e governança; reduz divergência entre máquinas; prepara a migração para cloud.
+- **Desvantagens**: ainda não entrega deploy automático em nuvem no workshop.
 
-### Opcao 3: Pipeline completo com deploy automatico em Azure no Estagio 2
+### Opção 3: Pipeline completo com deploy automático em Azure no Estágio 2
 
-- **Descricao**: implementar CI/CD full com provisionamento e deploy automatico imediato.
+- **Descrição**: implementar CI/CD completo com provisionamento e deploy automático imediato.
 - **Vantagens**: maturidade operacional mais alta desde cedo.
-- **Desvantagens**: custo e complexidade acima do necessario para o tempo do workshop.
+- **Desvantagens**: custo e complexidade acima do necessário para o tempo do workshop.
 
-## Decisao
+## Decisão
 
-**Decidimos adotar a Opcao 2: Docker Compose local + CI basico + Terraform draft.**
+**Decidimos adotar a Opção 2: Docker Compose local + CI básico + Terraform draft.**
 
 ## Justificativa
 
-A Opcao 2 atende o objetivo do workshop com menor risco:
+A Opção 2 atende o objetivo do workshop com menor risco porque:
 
-- garante ambiente local padrao para o time;
+- garante ambiente local padrão para o time;
 - estabelece gate de qualidade com workflow de CI;
-- formaliza a direcao de infraestrutura via Terraform sem bloquear o progresso por credenciais/cloud no Estagio 2.
+- formaliza a direção de infraestrutura via Terraform sem bloquear o progresso por credenciais cloud no Estágio 2.
 
-## Consequencias
+## Consequências
 
 ### Positivas
 
-- Build e execucao local ficam reproduziveis para a equipe.
-- Pipeline passa a validar mudancas criticas antes da demo.
-- Infraestrutura alvo fica documentada e versionada desde o inicio.
+- Build e execução local ficam reproduzíveis para a equipe.
+- O pipeline passa a validar mudanças críticas antes da demo.
+- A infraestrutura alvo fica documentada e versionada desde o início.
 
 ### Negativas
 
-- O deploy em nuvem ainda depende de evolucao no Estagio 4.
-- O draft Terraform exige refinamento de modulos e variaveis de ambiente.
+- O deploy em nuvem ainda depende de evolução no Estágio 4.
+- O draft Terraform exige refinamento de módulos, variáveis e providers reais.
 
 ### Riscos
 
-- **Risco**: diferenca entre ambiente local e nuvem.
-  **Mitigacao**: manter health checks e variaveis alinhados, e evoluir para pipeline com ambiente de homologacao.
+- **Risco**: diferença entre ambiente local e nuvem.
+  **Mitigação**: manter health checks, portas e variáveis alinhados; evoluir para pipeline com ambiente de homologação.
 
-## Referencias
+## Referências
 
 - [GUIDE do Estagio 2](GUIDE.md)
 - [Template ADR](ADR-TEMPLATE.md)
+- [ADR-0001 Frontend Angular](../docs/adr/0001-frontend-angular.md)
+- [ADR-0003 Outbox + broker](../docs/adr/0003-outbox-broker.md)
 - [Pipeline CI](../.github/workflows/ci.yml)
 - [Compose local](../docker-compose.yml)
-- REQ relacionado: REQ-OPS-001 (pipeline minimo), REQ-OPS-002 (infra como codigo)
+- [Draft Terraform](../infra/README.md)
+- REQ relacionado: REQ-OPS-001 (pipeline mínimo), REQ-OPS-002 (infra como código)
+
+---
+
+### Continuar a leitura
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top" align="left">
+<sub><strong>← ANTERIOR</strong></sub><br/>
+<a href="GUIDE.md"><strong>GUIDE do Estágio 2</strong></a><br/>
+<sub>Passo a passo do estágio.</sub>
+</td>
+<td width="50%" valign="top" align="right">
+<sub><strong>PRÓXIMO →</strong></sub><br/>
+<a href="../docs/adr/0001-frontend-angular.md"><strong>ADR-0001 Frontend Angular</strong></a><br/>
+<sub>Decisão relacionada de stack de frontend.</sub>
+</td>
+</tr>
+</table>
+
+<sub>↑ <a href="../README.md">Voltar ao Kit PT-BR</a></sub>

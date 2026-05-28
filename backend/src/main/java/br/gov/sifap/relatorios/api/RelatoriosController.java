@@ -40,8 +40,9 @@ public class RelatoriosController {
             @RequestParam(required = false) String acao,
             @RequestParam(required = false) String usuarioId,
             @RequestParam(required = false) String agregado,
+            @RequestParam(required = false) String agregadoId,
             @RequestParam(defaultValue = "false") boolean incluirExclusoes) {
-        return trilha.executar(de, ate, acao, usuarioId, agregado, incluirExclusoes).stream()
+        return trilha.executar(de, ate, acao, usuarioId, agregado, agregadoId, incluirExclusoes).stream()
                 .map(e -> new TrilhaResponse(e.getOcorridoEm().toString(), e.getAcao(),
                         e.getTipo(), e.getAgregado(), e.getAgregadoId(),
                         e.getUsuarioId(), "S".equals(e.getSucesso())))
