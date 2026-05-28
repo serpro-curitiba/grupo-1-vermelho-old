@@ -1,6 +1,10 @@
-# SIFAP 2.0 — Backend (Java 21 + Spring Boot 3.3 + Modulith)
+# SIFAP 2.0 — Backend
 
-> Estágio 3 do workshop. Implementa o MVP do bounded context **pagamentos** (REQ-PAY-001..024) + scaffold dos schemas `beneficiarios`, `programas`, `auditoria` (REQ-BEN-001, REQ-AUD-001).
+> Java 21 + Spring Boot 3.3 + Modulith.
+> Estágio 3 do workshop. Implementa o MVP do bounded context
+> **pagamentos** (REQ-PAY-001..024) + scaffold dos schemas
+> `beneficiarios`, `programas`, `auditoria`
+> (REQ-BEN-001, REQ-AUD-001).
 
 ## Build + testes
 
@@ -18,9 +22,9 @@ cd ..
 docker compose up -d --build backend postgres
 ```
 
-- API: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- Health: http://localhost:8080/actuator/health
+- API: <http://localhost:8080>
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- Health: <http://localhost:8080/actuator/health>
 
 ## Endpoint principal
 
@@ -44,7 +48,8 @@ GET /api/v1/ciclos/{cicloId}/resumo
 ```
 
 Retorna o resumo operacional e financeiro consolidado do ciclo (totais processados,
-gerados, rejeitados, ignorados, valor total, bruto, descontos, líquido, abono e 13º).
+gerados, rejeitados, ignorados, valor total, bruto, descontos,
+líquido, abono e 13º).
 
 ## Auditoria por ciclo
 
